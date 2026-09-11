@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+backend/secrets/*.json
+backend/secrets/*.pem
+backend/reports/*.pdf
+.pytest_cache/
+
+node_modules/
+dist/
