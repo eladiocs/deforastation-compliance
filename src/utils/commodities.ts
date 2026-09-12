@@ -1,7 +1,10 @@
 export const COMMODITY_LABELS: Record<string, string> = {
-  cafe: 'Café',
+  ganado: 'Ganado',
   cacao: 'Cacao',
+  cafe: 'Café',
+  aceite_palma: 'Aceite de palma',
   soja: 'Soja',
+  caucho: 'Caucho',
   madera: 'Madera',
 }
 

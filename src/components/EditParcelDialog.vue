@@ -77,9 +77,12 @@ function confirm(): void {
             class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 disabled:bg-gray-100"
           >
             <option value="">Selecciona…</option>
-            <option value="cafe">Café</option>
+            <option value="ganado">Ganado</option>
             <option value="cacao">Cacao</option>
+            <option value="cafe">Café</option>
+            <option value="aceite_palma">Aceite de palma</option>
             <option value="soja">Soja</option>
+            <option value="caucho">Caucho</option>
             <option value="madera">Madera</option>
           </select>
         </div>

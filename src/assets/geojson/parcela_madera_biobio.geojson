@@ -1,0 +1,33 @@
+{
+  "type": "Feature",
+  "properties": {
+    "osm_id": 1381589682,
+    "osm_type": "way",
+    "landuse": "forest",
+    "name": "Parcela forestal (pino) - Región del Biobío, Chile",
+    "client_name": "Forestal Biobío (ejemplo)",
+    "commodity": "madera",
+    "source": "OpenStreetMap (Overpass API), landuse=forest, produce=wood, species=Pinus radiata"
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [-72.5950623, -37.2873599],
+        [-72.5948036, -37.2872644],
+        [-72.5917486, -37.2881893],
+        [-72.5920033, -37.2890835],
+        [-72.5920461, -37.2892336],
+        [-72.5925350, -37.2893027],
+        [-72.5932547, -37.2894158],
+        [-72.5942276, -37.2895572],
+        [-72.5950406, -37.2895431],
+        [-72.5952183, -37.2894582],
+        [-72.5952672, -37.2892108],
+        [-72.5952788, -37.2885964],
+        [-72.5952853, -37.2882511],
+        [-72.5950623, -37.2873599]
+      ]
+    ]
+  }
+}

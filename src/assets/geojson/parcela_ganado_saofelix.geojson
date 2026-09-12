@@ -1,0 +1,50 @@
+{
+  "type": "Feature",
+  "properties": {
+    "name": "Parcela de riesgo alto - tala reciente, São Félix do Xingu, Pará (Brasil)",
+    "client_name": "Fazenda frontera Xingu (ejemplo)",
+    "commodity": "ganado",
+    "source": "Vectorizada a partir de UMD/hansen/global_forest_change_2025_v1_13 (Google Earth Engine): píxeles con treecover2000 > 10% y lossyear entre 2022 y 2024, dentro de la región de São Félix do Xingu, Pará (el municipio con más deforestación de la Amazonia brasileña por expansión ganadera).",
+    "verification": "Verificada contra la misma lógica que usa el backend (backend/app/forest_analysis.py, cutoff 2020-12-31, min_tree_cover_pct=10): area_total=7.91 ha, area_bosque_base=7.91 ha, perdida_tras_corte=7.82 ha (>> umbral de 0.1 ha) -> compliance_status esperado: non_compliant."
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [-51.734052, -6.299443],
+        [-51.731357, -6.299443],
+        [-51.731357, -6.299173],
+        [-51.731088, -6.299173],
+        [-51.731088, -6.298634],
+        [-51.729201, -6.298634],
+        [-51.729201, -6.297556],
+        [-51.729740, -6.297556],
+        [-51.729740, -6.296478],
+        [-51.730279, -6.296478],
+        [-51.730279, -6.297287],
+        [-51.730549, -6.297287],
+        [-51.730549, -6.297556],
+        [-51.730818, -6.297556],
+        [-51.730818, -6.295670],
+        [-51.731088, -6.295670],
+        [-51.731088, -6.295131],
+        [-51.730818, -6.295131],
+        [-51.730818, -6.294861],
+        [-51.731088, -6.294861],
+        [-51.731088, -6.294592],
+        [-51.731357, -6.294592],
+        [-51.731357, -6.295670],
+        [-51.731627, -6.295670],
+        [-51.731627, -6.298634],
+        [-51.731896, -6.298634],
+        [-51.731896, -6.299173],
+        [-51.733244, -6.299173],
+        [-51.733244, -6.298904],
+        [-51.733783, -6.298904],
+        [-51.733783, -6.299173],
+        [-51.734052, -6.299173],
+        [-51.734052, -6.299443]
+      ]
+    ]
+  }
+}
