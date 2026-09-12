@@ -195,7 +195,7 @@ function handleCancelDialog(): void {
 
     <p v-if="error" class="mb-3 text-sm text-red-600">{{ error }}</p>
 
-    <div class="relative isolate h-[360px] overflow-hidden rounded-xl border border-gray-200 lg:h-[58vh]">
+    <div class="relative isolate h-[480px] overflow-hidden rounded-xl border border-gray-200 lg:h-[72vh]">
       <div id="draw-map" class="h-full w-full"></div>
       <form
         class="absolute right-3 top-3 z-[1000] flex w-40 items-center gap-1.5 rounded-lg border border-gray-200 bg-white/95 px-2.5 py-1.5 shadow-sm backdrop-blur-sm transition-shadow focus-within:shadow-md sm:w-52"
