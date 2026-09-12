@@ -9,6 +9,11 @@ export const useParcelsStore = defineStore('parcels', () => {
   const analysesByParcel = ref<Record<string, Analysis[]>>({})
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const lastViewedMapCenter = ref<{ lat: number; lng: number; zoom: number } | null>(null)
+
+  function setLastViewedMapCenter(center: { lat: number; lng: number; zoom: number }): void {
+    lastViewedMapCenter.value = center
+  }
 
   async function fetchParcels(): Promise<void> {
     isLoading.value = true
@@ -80,6 +85,8 @@ export const useParcelsStore = defineStore('parcels', () => {
     analysesByParcel,
     isLoading,
     error,
+    lastViewedMapCenter,
+    setLastViewedMapCenter,
     fetchParcels,
     fetchParcel,
     createParcel,

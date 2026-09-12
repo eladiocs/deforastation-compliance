@@ -66,8 +66,19 @@ function openDialogForNewGeometry(): void {
 }
 
 onMounted(() => {
-  // Salento, Quindío (Eje Cafetero, Colombia) — zona cafetera, a nivel de parcela
-  map = L.map('draw-map').setView([4.6357, -75.5701], 17)
+  // Salento, Quindío (Eje Cafetero, Colombia) — zona cafetera, a nivel de parcela.
+  // Solo se usa como punto de partida cuando la app se acaba de abrir; en cuanto hay
+  // una posición reciente (venir de ver una parcela, o de esta misma pantalla), se
+  // conserva esa en vez de saltar aquí.
+  const saved = parcelsStore.lastViewedMapCenter
+  const initialCenter: L.LatLngTuple = saved ? [saved.lat, saved.lng] : [4.6357, -75.5701]
+  const initialZoom = saved?.zoom ?? 17
+
+  map = L.map('draw-map').setView(initialCenter, initialZoom)
+  map.on('moveend', () => {
+    const center = map!.getCenter()
+    parcelsStore.setLastViewedMapCenter({ lat: center.lat, lng: center.lng, zoom: map!.getZoom() })
+  })
   addBaseLayers(map)
 
   drawnLayer = new L.FeatureGroup()

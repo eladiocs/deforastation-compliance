@@ -75,6 +75,10 @@ function renderMap(p: Parcel) {
   addBaseLayers(map)
   const layer = L.geoJSON(p.geometry as any, { style: { color: '#059669', fillOpacity: 0.3 } }).addTo(map)
   map.fitBounds(layer.getBounds(), { padding: [5, 5], maxZoom: 17 })
+  map.on('moveend', () => {
+    const center = map!.getCenter()
+    parcelsStore.setLastViewedMapCenter({ lat: center.lat, lng: center.lng, zoom: map!.getZoom() })
+  })
 }
 
 async function runAnalysis() {
