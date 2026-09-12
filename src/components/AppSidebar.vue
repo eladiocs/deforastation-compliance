@@ -28,7 +28,7 @@ watch(
   >
     <div class="flex items-start justify-between border-b border-gray-100 px-5 pb-5 pt-6">
       <div>
-        <p class="text-3xl font-bold tracking-wide text-[#123a42]">Trazabosque</p>
+        <p class="text-3xl font-bold tracking-wide text-[#123a42]">Anti-deforestación</p>
         <p class="mt-0.5 text-base font-semibold text-[#5fb92c]">Cumplimiento EUDR</p>
       </div>
       <button

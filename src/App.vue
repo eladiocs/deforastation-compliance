@@ -23,7 +23,7 @@ const sidebarOpen = ref(false)
         >
           <Bars3Icon class="h-6 w-6" />
         </button>
-        <p class="text-lg font-bold text-[#123a42]">Trazabosque</p>
+        <p class="text-lg font-bold text-[#123a42]">Anti-deforestación</p>
       </header>
       <main class="flex-1 overflow-y-auto p-4 sm:p-6">
         <RouterView :key="$route.fullPath" />
