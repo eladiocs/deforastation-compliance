@@ -19,6 +19,9 @@ const router = useRouter()
 const geometry = ref<GeoJsonPolygon | null>(null)
 const error = ref<string | null>(null)
 
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const uploadedFileName = ref<string | null>(null)
+
 const isDialogOpen = ref(false)
 const submitting = ref(false)
 const saveError = ref<string | null>(null)
@@ -127,9 +130,14 @@ function extractPolygonGeometry(parsed: any): GeoJsonPolygon | null {
   return parsed.type === 'Feature' ? parsed.geometry : parsed
 }
 
+function triggerFileUpload() {
+  fileInputRef.value?.click()
+}
+
 function onFileUpload(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
+  uploadedFileName.value = file.name
   const reader = new FileReader()
   reader.onload = () => {
     try {
@@ -183,19 +191,9 @@ function handleCancelDialog(): void {
   <div>
     <h1 class="mb-4 text-xl font-semibold text-gray-900">Nueva parcela</h1>
 
-    <div class="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-      <span class="text-sm text-gray-600">Dibuje su polígono o suba un geojson</span>
-      <input
-        type="file"
-        accept=".geojson,.json,application/geo+json"
-        class="text-sm"
-        @change="onFileUpload"
-      />
-    </div>
-
     <p v-if="error" class="mb-3 text-sm text-red-600">{{ error }}</p>
 
-    <div class="relative isolate h-[480px] overflow-hidden rounded-xl border border-gray-200 lg:h-[72vh]">
+    <div class="relative isolate h-[700px] overflow-hidden rounded-xl border border-gray-200">
       <div id="draw-map" class="h-full w-full"></div>
       <form
         class="absolute right-3 top-3 z-[1000] flex w-40 items-center gap-1.5 rounded-lg border border-gray-200 bg-white/95 px-2.5 py-1.5 shadow-sm backdrop-blur-sm transition-shadow focus-within:shadow-md sm:w-52"
@@ -210,7 +208,7 @@ function handleCancelDialog(): void {
           v-model="citySearchQuery"
           type="text"
           placeholder="Buscar ciudad..."
-          class="min-w-0 flex-1 border-none bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-0"
+          class="min-w-0 flex-1 border-none bg-transparent p-0 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-0"
         />
       </form>
       <div
@@ -218,6 +216,27 @@ function handleCancelDialog(): void {
         class="absolute right-3 top-14 z-[1000] rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-800 shadow-sm"
       >
         {{ citySearchError }}
+      </div>
+
+      <div
+        class="absolute bottom-3 left-3 z-[1000] flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-2.5 py-1.5 shadow-sm backdrop-blur-sm"
+      >
+        <button
+          type="button"
+          class="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+          @click="triggerFileUpload"
+        >
+          Subir geojson
+        </button>
+        <span v-if="uploadedFileName" class="max-w-[8rem] truncate text-xs text-gray-500">{{ uploadedFileName }}</span>
+        <span v-else class="max-w-[10rem] truncate text-xs text-gray-500">o dibuje su polígono en el mapa</span>
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept=".geojson,.json,application/geo+json"
+          class="hidden"
+          @change="onFileUpload"
+        />
       </div>
     </div>
 
@@ -233,6 +252,6 @@ function handleCancelDialog(): void {
 
 <style scoped>
 :deep(.leaflet-top.leaflet-right) {
-  margin-top: 64px;
+  margin-top: 56px;
 }
 </style>

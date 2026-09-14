@@ -12,8 +12,8 @@ import EmptyState from '@/components/EmptyState.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { useParcelsStore } from '@/stores/parcels'
 import { commodityLabel } from '@/utils/commodities'
-import { addBaseLayers, geocodeCity } from '@/utils/mapLayers'
-import { MagnifyingGlassIcon, PencilIcon, TrashIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { addBaseLayers } from '@/utils/mapLayers'
+import { PencilIcon, TrashIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,30 +32,7 @@ const cutoffDate = ref('2020-12-31')
 const minTreeCoverPct = ref(10)
 const showAdvanced = ref(false)
 
-const citySearchQuery = ref('')
-const isSearchingCity = ref(false)
-const citySearchError = ref<string | null>(null)
-
 let map: L.Map | undefined
-
-async function searchCity() {
-  const query = citySearchQuery.value.trim()
-  if (!query) return
-  isSearchingCity.value = true
-  citySearchError.value = null
-  try {
-    const result = await geocodeCity(query)
-    if (!result) {
-      citySearchError.value = `No se ha encontrado "${query}"`
-      return
-    }
-    map?.flyTo([result.lat, result.lon], 12)
-  } catch {
-    citySearchError.value = 'No se pudo buscar la ciudad. Inténtalo de nuevo.'
-  } finally {
-    isSearchingCity.value = false
-  }
-}
 
 async function load() {
   loading.value = true
@@ -213,28 +190,6 @@ onUnmounted(() => {
     <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-[3fr_1fr]">
       <div class="relative isolate h-[360px] overflow-hidden rounded-xl border border-gray-200 lg:h-[58vh]">
         <div id="parcel-map" class="h-full w-full"></div>
-        <form
-          class="absolute right-3 top-3 z-[1000] flex w-40 items-center gap-1.5 rounded-lg border border-gray-200 bg-white/95 px-2.5 py-1.5 shadow-sm backdrop-blur-sm transition-shadow focus-within:shadow-md sm:w-52"
-          @submit.prevent="searchCity"
-        >
-          <span
-            v-if="isSearchingCity"
-            class="block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent"
-          />
-          <MagnifyingGlassIcon v-else class="h-3.5 w-3.5 shrink-0 text-gray-400" />
-          <input
-            v-model="citySearchQuery"
-            type="text"
-            placeholder="Buscar ciudad..."
-            class="min-w-0 flex-1 border-none bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-0"
-          />
-        </form>
-        <div
-          v-if="citySearchError"
-          class="absolute right-3 top-14 z-[1000] rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-800 shadow-sm"
-        >
-          {{ citySearchError }}
-        </div>
       </div>
 
       <div class="rounded-xl border border-gray-200 bg-white p-4">
@@ -413,9 +368,3 @@ onUnmounted(() => {
     />
   </div>
 </template>
-
-<style scoped>
-:deep(.leaflet-top.leaflet-right) {
-  margin-top: 64px;
-}
-</style>
