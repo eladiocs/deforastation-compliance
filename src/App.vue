@@ -9,15 +9,17 @@ const dataSourcesOpen = ref(false)
 </script>
 
 <template>
-  <div class="flex h-screen bg-gray-50">
+  <div class="flex h-dvh bg-gray-50">
     <div
       v-if="sidebarOpen"
-      class="fixed inset-0 z-30 bg-black/40 md:hidden"
+      class="fixed inset-0 z-[1001] bg-black/40 md:hidden"
       @click="sidebarOpen = false"
     />
     <AppSidebar :open="sidebarOpen" @close="sidebarOpen = false" />
     <div class="flex min-w-0 flex-1 flex-col">
-      <header class="flex shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 md:hidden">
+      <header
+        class="flex shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden"
+      >
         <button
           type="button"
           class="rounded-md p-1.5 text-gray-500 hover:bg-gray-100"
@@ -30,7 +32,9 @@ const dataSourcesOpen = ref(false)
       <main class="flex-1 overflow-y-auto p-4 sm:p-6">
         <RouterView :key="$route.fullPath" />
       </main>
-      <footer class="flex shrink-0 items-center justify-center px-4 py-2">
+      <footer
+        class="flex shrink-0 items-center justify-center px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2"
+      >
         <button
           class="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-[#123a42]"
           @click="dataSourcesOpen = true"

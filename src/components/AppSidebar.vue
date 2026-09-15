@@ -22,22 +22,41 @@ watch(
 </script>
 
 <template>
+  <Transition
+    enter-active-class="transition-opacity ease-linear duration-300"
+    enter-from-class="opacity-0"
+    enter-to-class="opacity-100"
+    leave-active-class="transition-opacity ease-linear duration-300"
+    leave-from-class="opacity-100"
+    leave-to-class="opacity-0"
+  >
+    <div
+      v-if="open"
+      class="fixed inset-0 z-[1001] bg-gray-900/80 md:hidden"
+      @click="emit('close')"
+    />
+  </Transition>
   <nav
-    class="fixed inset-y-0 left-0 z-40 flex h-screen w-64 shrink-0 -translate-x-full flex-col border-r border-gray-200 bg-white transition-transform duration-200 md:static md:translate-x-0"
+    class="fixed inset-y-0 left-0 z-[1002] flex h-dvh w-64 shrink-0 -translate-x-full flex-col border-r border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] transition-transform duration-300 md:static md:z-auto md:translate-x-0"
     :class="{ 'translate-x-0': open }"
   >
-    <div class="flex items-start justify-between border-b border-gray-100 px-5 pb-5 pt-6">
-      <div>
-        <p class="text-3xl font-bold tracking-wide text-[#123a42]">Anti-deforestación</p>
-        <p class="mt-0.5 text-base font-semibold text-[#5fb92c]">Cumplimiento EUDR</p>
+    <Transition
+      enter-active-class="ease-in-out duration-300"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="ease-in-out duration-300"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="open" class="absolute left-full top-0 flex w-16 justify-center pt-5 md:hidden">
+        <button type="button" class="-m-2.5 p-2.5" aria-label="Cerrar menú" @click="emit('close')">
+          <XMarkIcon class="h-6 w-6 text-white" aria-hidden="true" />
+        </button>
       </div>
-      <button
-        type="button"
-        class="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 md:hidden"
-        @click="emit('close')"
-      >
-        <XMarkIcon class="h-5 w-5" />
-      </button>
+    </Transition>
+    <div class="border-b border-gray-100 px-5 pb-5 pt-6">
+      <p class="text-3xl font-bold tracking-wide text-[#123a42]">Anti-deforestación</p>
+      <p class="mt-0.5 text-base font-semibold text-[#5fb92c]">Cumplimiento EUDR</p>
     </div>
     <div class="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
       <RouterLink

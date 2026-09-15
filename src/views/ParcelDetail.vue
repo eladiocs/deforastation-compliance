@@ -188,7 +188,7 @@ onUnmounted(() => {
     </div>
 
     <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-[3fr_1fr]">
-      <div class="relative isolate h-[360px] overflow-hidden rounded-xl border border-gray-200 lg:h-[58vh]">
+      <div class="relative isolate h-[320px] overflow-hidden rounded-xl border border-gray-200 sm:h-[480px] lg:h-[640px]">
         <div id="parcel-map" class="h-full w-full"></div>
       </div>
 

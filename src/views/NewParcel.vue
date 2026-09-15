@@ -189,11 +189,30 @@ function handleCancelDialog(): void {
 
 <template>
   <div>
-    <h1 class="mb-4 text-xl font-semibold text-gray-900">Nueva parcela</h1>
+    <h1 class="text-xl font-semibold text-gray-900">Nueva parcela</h1>
+
+    <p class="mb-4 mt-1 text-sm text-gray-500">
+      <button
+        type="button"
+        class="font-medium text-gray-700 underline decoration-dotted underline-offset-2 hover:text-[#123a42]"
+        @click="triggerFileUpload"
+      >
+        Sube un archivo geojson
+      </button>
+      o dibuje un polígono.
+      <span v-if="uploadedFileName" class="ml-1 text-xs text-gray-400">({{ uploadedFileName }})</span>
+      <input
+        ref="fileInputRef"
+        type="file"
+        accept=".geojson,.json,application/geo+json"
+        class="hidden"
+        @change="onFileUpload"
+      />
+    </p>
 
     <p v-if="error" class="mb-3 text-sm text-red-600">{{ error }}</p>
 
-    <div class="relative isolate h-[700px] overflow-hidden rounded-xl border border-gray-200">
+    <div class="relative isolate h-[320px] overflow-hidden rounded-xl border border-gray-200 sm:h-[480px] lg:h-[640px]">
       <div id="draw-map" class="h-full w-full"></div>
       <form
         class="absolute right-3 top-3 z-[1000] flex w-40 items-center gap-1.5 rounded-lg border border-gray-200 bg-white/95 px-2.5 py-1.5 shadow-sm backdrop-blur-sm transition-shadow focus-within:shadow-md sm:w-52"
@@ -216,27 +235,6 @@ function handleCancelDialog(): void {
         class="absolute right-3 top-14 z-[1000] rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-800 shadow-sm"
       >
         {{ citySearchError }}
-      </div>
-
-      <div
-        class="absolute bottom-3 left-3 z-[1000] flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-2.5 py-1.5 shadow-sm backdrop-blur-sm"
-      >
-        <button
-          type="button"
-          class="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
-          @click="triggerFileUpload"
-        >
-          Subir geojson
-        </button>
-        <span v-if="uploadedFileName" class="max-w-[8rem] truncate text-xs text-gray-500">{{ uploadedFileName }}</span>
-        <span v-else class="max-w-[10rem] truncate text-xs text-gray-500">o dibuje su polígono en el mapa</span>
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept=".geojson,.json,application/geo+json"
-          class="hidden"
-          @change="onFileUpload"
-        />
       </div>
     </div>
 
