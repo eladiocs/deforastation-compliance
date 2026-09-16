@@ -9,11 +9,12 @@ import AnalysisReport from '@/components/AnalysisReport.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import EditParcelDialog from '@/components/EditParcelDialog.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import Modal from '@/components/Modal.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { useParcelsStore } from '@/stores/parcels'
 import { commodityLabel } from '@/utils/commodities'
 import { addBaseLayers } from '@/utils/mapLayers'
-import { PencilIcon, TrashIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
 const router = useRouter()
@@ -315,31 +316,9 @@ onUnmounted(() => {
       </div>
     </template>
 
-    <div
-      v-if="selectedAnalysis"
-      class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40 px-4 py-8"
-      @click.self="selectedAnalysis = null"
-    >
-      <div class="flex max-h-full w-full max-w-4xl flex-col rounded-xl bg-white shadow-xl">
-        <div class="flex shrink-0 items-center justify-end border-b border-gray-200 p-2">
-          <button
-            type="button"
-            class="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-            @click="selectedAnalysis = null"
-          >
-            <XMarkIcon class="h-5 w-5" />
-          </button>
-        </div>
-        <div class="overflow-y-auto p-6">
-          <AnalysisReport :analysis="selectedAnalysis" />
-        </div>
-        <div class="flex shrink-0 items-center justify-end border-t border-gray-200 p-2">
-          <span class="invisible rounded-md p-1.5">
-            <XMarkIcon class="h-5 w-5" />
-          </span>
-        </div>
-      </div>
-    </div>
+    <Modal :open="!!selectedAnalysis" max-width-class="max-w-4xl" @close="selectedAnalysis = null">
+      <AnalysisReport v-if="selectedAnalysis" :analysis="selectedAnalysis" />
+    </Modal>
 
     <ConfirmDialog
       :open="!!analysisPendingDelete"
