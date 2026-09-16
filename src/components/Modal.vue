@@ -14,12 +14,12 @@ const emit = defineEmits<{ close: [] }>()
     @click.self="emit('close')"
   >
     <div class="flex max-h-[85vh] w-full flex-col rounded-xl bg-white shadow-xl" :class="maxWidthClass">
-      <div class="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-4">
+      <div class="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-3">
         <div class="min-w-0">
           <slot name="header" />
         </div>
         <button
-          class="shrink-0 rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          class="shrink-0 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600"
           aria-label="Cerrar"
           @click="emit('close')"
         >
