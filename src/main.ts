@@ -2,6 +2,17 @@ import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import './style.css'
 
+import L from 'leaflet'
+
+// leaflet-draw's UMD build patches a global "L" rather than importing leaflet as
+// an ES module — in the production bundle (two lazy-loaded map routes instead of
+// one) that global lookup no longer resolves on its own, causing "L is not
+// defined" at runtime. Exposing it explicitly here, before leaflet-draw loads,
+// keeps it pointed at the same leaflet instance every component imports.
+;(globalThis as unknown as { L: typeof L }).L = L
+
+import 'leaflet-draw'
+
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 
