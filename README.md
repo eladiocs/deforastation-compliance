@@ -6,18 +6,20 @@ Learn more about the recommended Project Setup and IDE Support in the [Vue Docs 
 
 ## Relanzar la app
 
-Backend (API + base de datos) corre en Docker; el frontend corre aparte con Vite.
+Backend (dos APIs + una base de datos compartida) corre en Docker; el frontend corre aparte
+con Vite.
 
 ```bash
-docker compose up -d       # backend (API en :8010, PostGIS en :5434)
-npm run dev                 # frontend (:5173)
+docker compose up -d       # api (anti-deforestación, :8010), api-corredores (:8100), PostGIS (:5434)
+npm run dev                 # frontend (:5174)
 ```
 
-Si ya está levantado y solo cambiaste código del backend (el contenedor corre con `--reload`
-y monta `./backend` como volumen, así que normalmente no hace falta reiniciar nada):
+Si ya está levantado y solo cambiaste código de un backend (los contenedores montan su
+carpeta como volumen, así que normalmente no hace falta reconstruir nada):
 
 ```bash
-docker compose restart api
+docker compose restart api               # anti-deforestación
+docker compose restart api-corredores    # corredores biológicos
 ```
 
 ## Repositorio
@@ -129,6 +131,48 @@ pero tecleado en tu propia terminal, nunca compartido en un chat/IA):
 docker compose run --rm --no-deps -e DATABASE_URL="postgresql+psycopg://postgres.<ref>:<password>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres" api alembic upgrade head
 ```
 
+### 2b. Backend corredores — Render Web Service (Docker)
+
+Segundo backend, mismo patrón que el paso 2, pero **usa el mismo Supabase del paso 1**
+(no crees un proyecto Supabase nuevo — este servicio gestiona solo su propio schema
+`corredores`, aislado de las tablas de anti-deforestación por diseño, ver
+`backend-corredores/app/database.py`).
+
+Dashboard → **New > Web Service** → mismo repo `eladiocs/deforastation-compliance`.
+
+- **Name**: `deforcompliance-api-corredores`.
+- **Language**: `Docker` (igual que en el paso 2).
+- **Branch**: `main`.
+- **Region**: `Frankfurt (EU Central)` (misma región que el otro backend).
+- **Root Directory**: `backend-corredores`.
+- **Instance Type**: `Free` para el demo (mismo aviso de "sleep" que el otro backend).
+- **Advanced**:
+  - **Health Check Path**: `/health`
+  - **Port**: `8000`
+  - **Auto-Deploy**: `On Commit`
+  - **Environment Variables**:
+    ```
+    DATABASE_URL=postgresql+psycopg://...   # el MISMO valor que usaste en el paso 1/2,
+                                              # con el prefijo cambiado — misma base de datos
+    PYTHONPATH=/app
+    CORS_ORIGINS=...                         # igual que el otro backend, se rellena en el paso 3
+    ```
+    No hace falta **Secret Files** aquí (este servicio no usa GEE ni firma reportes).
+
+Tras el primer deploy, aplica sus migraciones (crean el schema `corredores` — no tocan las
+tablas del otro backend):
+
+```bash
+alembic upgrade head
+```
+
+Mismo aviso que arriba: en plan **Free** sin Shell, córrelo desde tu propio PC apuntando al
+mismo `DATABASE_URL` de Supabase:
+
+```bash
+docker compose run --rm --no-deps -e DATABASE_URL="postgresql+psycopg://postgres.<ref>:<password>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres" api-corredores alembic upgrade head
+```
+
 ### 3. Frontend — Render Static Site
 
 1. Dashboard → **New > Static Site** → mismo repo `eladiocs/deforastation-compliance`.
@@ -140,16 +184,22 @@ docker compose run --rm --no-deps -e DATABASE_URL="postgresql+psycopg://postgres
    en `backend/`).
 5. **Build Command**: `npm install; npm run build` (equivalente a `npm ci && npm run build`)
    — **Publish Directory**: `dist`.
-6. **Environment Variable** (se hornea en el build, Vite la lee en build-time):
-   `VITE_API_URL=https://deforcompliance-api.onrender.com`
+6. **Environment Variables** (se hornean en el build, Vite las lee en build-time — un solo
+   Static Site sirve ambos módulos, cada uno habla con su propio backend):
+   ```
+   VITE_API_URL=https://deforcompliance-api.onrender.com
+   VITE_API_URL_CORREDORES=https://deforcompliance-api-corredores.onrender.com
+   ```
 7. Crear el Static Site y esperar al build.
 8. Una vez tengas la URL pública del Static Site (tipo
-   `https://deforcompliance-front.onrender.com`), vuelve al backend (paso 2) y pon
-   `CORS_ORIGINS=https://deforcompliance-front.onrender.com` (o tu dominio propio si
-   configuras uno) y redepliega el backend.
+   `https://deforcompliance-front.onrender.com`), vuelve a **ambos** backends (pasos 2 y 2b) y
+   pon `CORS_ORIGINS=https://deforcompliance-front.onrender.com` (o tu dominio propio si
+   configuras uno) en cada uno, y redepliega los dos.
 
 ### 4. Verificación
 
-- `GET https://<backend>.onrender.com/health` → `{"status": "ok"}`
-- Abrir el Static Site en el navegador y comprobar que carga las parcelas (sin errores de CORS
-  en la consola).
+- `GET https://deforcompliance-api.onrender.com/health` → `{"status": "ok"}`
+- `GET https://deforcompliance-api-corredores.onrender.com/health` → `{"status": "ok"}`
+- Abrir el Static Site en el navegador: la home debe mostrar las dos cards; entrar a
+  "Anti-deforestación" y a "Corredores biológicos" y comprobar que cada uno carga sus parcelas
+  sin errores de CORS en la consola (cada módulo pega a un backend distinto).

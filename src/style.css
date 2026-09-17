@@ -60,3 +60,25 @@ body,
   margin: 0.25rem 0;
   border-top-color: rgb(0 0 0 / 8%);
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #impact-report,
+  #impact-report * {
+    visibility: visible;
+  }
+  #impact-report {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .no-print {
+    display: none !important;
+  }
+  @page {
+    margin: 1.5cm;
+  }
+}

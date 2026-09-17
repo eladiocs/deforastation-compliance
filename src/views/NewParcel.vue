@@ -171,7 +171,7 @@ async function handleConfirmDialog(payload: { name: string; clientName: string; 
       commodity: payload.commodity || null,
       geometry: geometry.value,
     })
-    router.push(`/parcels/${parcel.id}`)
+    router.push(`/deforestacion/parcels/${parcel.id}`)
   } catch (e) {
     saveError.value = 'No se pudo crear la parcela. Revisa que la geometría sea válida.'
   } finally {

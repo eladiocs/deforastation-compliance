@@ -56,7 +56,7 @@ const SOURCES: SourceRow[] = [
           <tr v-for="row in SOURCES" :key="row.dato" class="border-b border-gray-100 align-top last:border-b-0">
             <td class="py-2.5 pr-4 font-medium text-gray-900">{{ row.dato }}</td>
             <td class="py-2.5 pr-4 text-gray-600">{{ row.fuente }}</td>
-            <td class="py-2.5 pr-4 whitespace-nowrap text-gray-600">{{ row.resolucion }}</td>
+            <td class="py-2.5 pr-4 text-gray-600">{{ row.resolucion }}</td>
             <td class="py-2.5 pr-4 text-gray-600">{{ row.metodo }}</td>
           </tr>
         </tbody>

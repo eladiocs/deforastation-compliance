@@ -146,7 +146,7 @@ async function confirmDeleteParcel() {
     await parcelsStore.deleteParcel(parcelId)
     isDeleteParcelDialogOpen.value = false
     const next = parcelsStore.parcels[0]
-    router.push(next ? `/parcels/${next.id}` : '/')
+    router.push(next ? `/deforestacion/parcels/${next.id}` : '/deforestacion')
   } finally {
     isDeletingParcel.value = false
   }

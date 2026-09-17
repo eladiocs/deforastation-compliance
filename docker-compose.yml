@@ -32,5 +32,21 @@ services:
       db:
         condition: service_healthy
 
+  api-corredores:
+    build: ./backend-corredores
+    environment:
+      # Misma base de datos que "api" (Supabase no permite un segundo proyecto);
+      # este servicio gestiona únicamente su propio schema "corredores".
+      DATABASE_URL: postgresql+psycopg://deforcompliance:deforcompliance@db:5432/deforcompliance
+      CORS_ORIGINS: "http://localhost:5174"
+      PYTHONPATH: /app
+    ports:
+      - "8100:8000"
+    volumes:
+      - ./backend-corredores:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   deforcompliance_db_data:

@@ -1,25 +1,19 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { DocumentPlusIcon, MapIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { MapIcon, PlusIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import companyLogo from '@/assets/logo-empresa.png'
-import { useParcelsStore } from '@/stores/parcels'
+import { useBioParcelsStore } from '@/stores/bioParcels'
 import BackToDashboardButton from '@/components/BackToDashboardButton.vue'
 
 defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
 const route = useRoute()
-const parcelsStore = useParcelsStore()
+const parcelsStore = useBioParcelsStore()
 
-onMounted(() => {
-  parcelsStore.fetchParcels()
-})
-
-watch(
-  () => route.fullPath,
-  () => emit('close'),
-)
+onMounted(() => parcelsStore.fetchParcels())
+watch(() => route.fullPath, () => emit('close'))
 </script>
 
 <template>
@@ -57,20 +51,20 @@ watch(
     </Transition>
     <BackToDashboardButton />
     <div class="border-b border-gray-100 px-5 pb-5 pt-2">
-      <p class="text-3xl font-bold tracking-wide text-[#123a42]">Anti-deforestación</p>
-      <p class="mt-0.5 text-base font-semibold text-[#5fb92c]">Cumplimiento EUDR</p>
+      <p class="text-3xl font-bold tracking-wide text-[#123a42]">BioConnect</p>
+      <p class="mt-0.5 text-sm font-semibold text-[#5fb92c]">Informes de impacto en conectividad ecológica</p>
     </div>
     <div class="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
       <RouterLink
-        to="/deforestacion"
-        class="flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50 hover:text-[#123a42]"
+        to="/corredores"
+        class="flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium transition-colors hover:bg-[#f2f9ec] hover:text-[#123a42]"
         :class="
-          route.path === '/deforestacion'
+          route.path === '/corredores'
             ? 'border-[#5fb92c] bg-[#f2f9ec] font-semibold text-[#123a42]'
             : 'border-transparent text-gray-600'
         "
       >
-        <DocumentPlusIcon class="h-5 w-5 shrink-0" />
+        <PlusIcon class="h-5 w-5 shrink-0" />
         Nueva parcela
       </RouterLink>
 
@@ -87,10 +81,10 @@ watch(
         <RouterLink
           v-for="p in parcelsStore.parcels"
           :key="p.id"
-          :to="`/deforestacion/parcels/${p.id}`"
-          class="flex min-w-0 items-center gap-3 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-50 hover:text-[#123a42]"
+          :to="`/corredores/parcels/${p.id}`"
+          class="flex min-w-0 items-center gap-3 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-colors hover:bg-[#f2f9ec] hover:text-[#123a42]"
           :class="
-            route.params.id === p.id
+            String(route.params.id) === String(p.id)
               ? 'border-[#5fb92c] bg-[#f2f9ec] font-semibold text-[#123a42]'
               : 'border-transparent text-gray-600'
           "
