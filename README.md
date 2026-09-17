@@ -99,7 +99,6 @@ el formulario de creación:
     GEE_SERVICE_ACCOUNT_EMAIL=...
     GEE_KEY_PATH=/etc/secrets/gee-key.json
     GEE_PROJECT_ID=...
-    REPORTS_DIR=/app/reports
     REPORT_SIGNING_KEY_PATH=/etc/secrets/report-signing-key.pem
     CORS_ORIGINS=...                              # se rellena en el paso 3, tras desplegar el frontend
     ```

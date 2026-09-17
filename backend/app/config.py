@@ -9,7 +9,6 @@ class Settings(BaseSettings):
     GEE_KEY_PATH: str = "secrets/gee-key.json"
 
     DATABASE_URL: str = "postgresql+psycopg://deforcompliance:deforcompliance@localhost:5434/deforcompliance"
-    REPORTS_DIR: str = "reports"
     REPORT_SIGNING_KEY_PATH: str = "secrets/report-signing-key.pem"
 
 

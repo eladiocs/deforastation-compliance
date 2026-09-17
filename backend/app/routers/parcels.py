@@ -16,7 +16,6 @@ from app.schemas import (
     ParcelOut,
     ParcelUpdateRequest,
 )
-from app.storage import delete_report_pdf, save_report_pdf
 
 router = APIRouter(prefix="/api/v1/parcels", tags=["parcels"])
 
@@ -83,9 +82,6 @@ def delete_parcel(parcel_id: uuid.UUID, db: Session = Depends(get_db)) -> None:
     if parcel is None:
         raise HTTPException(status_code=404, detail="Parcel not found")
 
-    for analysis in parcel.analyses:
-        delete_report_pdf(analysis.report_pdf_path)
-
     db.delete(parcel)
     db.commit()
 
@@ -133,7 +129,7 @@ def create_analysis(
     db.refresh(analysis)
 
     pdf_bytes, sha256_hex, signature_b64 = generate_report(parcel, analysis)
-    analysis.report_pdf_path = save_report_pdf(analysis.id, pdf_bytes)
+    analysis.report_pdf_data = pdf_bytes
     analysis.report_sha256 = sha256_hex
     analysis.report_signature_b64 = signature_b64
     db.commit()

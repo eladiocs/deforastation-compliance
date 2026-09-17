@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 
 from geoalchemy2 import Geometry
-from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, LargeBinary, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -41,7 +41,7 @@ class Analysis(Base):
     ndvi_quarterly_series: Mapped[list] = mapped_column(JSON, nullable=False)
     dataset_notes: Mapped[list] = mapped_column(JSON, nullable=False)
 
-    report_pdf_path: Mapped[str | None] = mapped_column(String, nullable=True)
+    report_pdf_data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     report_sha256: Mapped[str | None] = mapped_column(String, nullable=True)
     report_signature_b64: Mapped[str | None] = mapped_column(Text, nullable=True)
 

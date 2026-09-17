@@ -1,13 +1,11 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app import models
 from app.database import get_db
 from app.schemas import AnalysisOut
-from app.storage import delete_report_pdf
 
 router = APIRouter(prefix="/api/v1/analyses", tags=["analyses"])
 
@@ -26,18 +24,17 @@ def delete_analysis(analysis_id: uuid.UUID, db: Session = Depends(get_db)) -> No
     if analysis is None:
         raise HTTPException(status_code=404, detail="Analysis not found")
 
-    delete_report_pdf(analysis.report_pdf_path)
     db.delete(analysis)
     db.commit()
 
 
 @router.get("/{analysis_id}/report")
-def download_report(analysis_id: uuid.UUID, db: Session = Depends(get_db)) -> FileResponse:
+def download_report(analysis_id: uuid.UUID, db: Session = Depends(get_db)) -> Response:
     analysis = db.get(models.Analysis, analysis_id)
-    if analysis is None or not analysis.report_pdf_path:
+    if analysis is None or not analysis.report_pdf_data:
         raise HTTPException(status_code=404, detail="Report not found")
-    return FileResponse(
-        analysis.report_pdf_path,
+    return Response(
+        content=analysis.report_pdf_data,
         media_type="application/pdf",
-        filename=f"eudr-dossier-{analysis_id}.pdf",
+        headers={"Content-Disposition": f'attachment; filename="eudr-dossier-{analysis_id}.pdf"'},
     )

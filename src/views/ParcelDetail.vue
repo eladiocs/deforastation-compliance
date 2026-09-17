@@ -26,6 +26,7 @@ const analyses = ref<Analysis[]>([])
 const selectedAnalysis = ref<Analysis | null>(null)
 const analysisPendingDeleteId = ref<string | null>(null)
 const loading = ref(true)
+const loadError = ref<string | null>(null)
 const running = ref(false)
 const error = ref<string | null>(null)
 
@@ -37,12 +38,18 @@ let map: L.Map | undefined
 
 async function load() {
   loading.value = true
-  const [p, a] = await Promise.all([parcelsStore.fetchParcel(parcelId), parcelsStore.fetchAnalyses(parcelId)])
-  parcel.value = p
-  analyses.value = a
-  loading.value = false
-  await nextTick()
-  renderMap(p)
+  loadError.value = null
+  try {
+    const [p, a] = await Promise.all([parcelsStore.fetchParcel(parcelId), parcelsStore.fetchAnalyses(parcelId)])
+    parcel.value = p
+    analyses.value = a
+    loading.value = false
+    await nextTick()
+    renderMap(p)
+  } catch {
+    loadError.value = '¿Está el backend arrancado? Recarga la página para volver a intentarlo.'
+    loading.value = false
+  }
 }
 
 function renderMap(p: Parcel) {
@@ -159,7 +166,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="loading" class="text-sm text-gray-500">Cargando…</div>
+  <EmptyState v-if="loading" title="Cargando parcela…" />
+  <EmptyState v-else-if="loadError" title="No se pudo conectar con la API" :description="loadError" />
   <div v-else-if="parcel">
     <div class="mb-4 flex items-center gap-12">
       <div>

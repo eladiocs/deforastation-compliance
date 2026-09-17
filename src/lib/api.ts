@@ -69,6 +69,21 @@ async function deleteRequest(path: string): Promise<void> {
   return handleResponse<void>(response, path)
 }
 
+const HEALTH_CHECK_TIMEOUT_MS = 5_000
+
+export async function checkHealth(): Promise<boolean> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS)
+  try {
+    const response = await fetch(`${API_BASE_URL}/health`, { signal: controller.signal })
+    return response.ok
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 export function generateStudyArea(
   polygon: { lat: number; lng: number }[],
   count: number,

@@ -1,19 +1,49 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Bars3Icon, InformationCircleIcon } from '@heroicons/vue/24/outline'
 import AppSidebar from '@/components/AppSidebar.vue'
 import BioAppSidebar from '@/components/BioAppSidebar.vue'
 import DataSourcesModal from '@/components/DataSourcesModal.vue'
 import BioDataSourcesModal from '@/components/BioDataSourcesModal.vue'
+import WakeUpOverlay from '@/components/WakeUpOverlay.vue'
+import { useBackendWakeStore, type BackendModule } from '@/stores/backendWake'
 
 const route = useRoute()
+const wakeStore = useBackendWakeStore()
 
 const sidebarOpen = ref(false)
 const dataSourcesOpen = ref(false)
 
 const hideChrome = computed(() => Boolean(route.meta.hideChrome))
 const isCorredores = computed(() => route.meta.module === 'corredores')
+
+const currentModule = computed<BackendModule | undefined>(() => {
+  const moduleKey = route.meta.module
+  return moduleKey === 'deforestacion' || moduleKey === 'corredores' ? moduleKey : undefined
+})
+
+watch(
+  currentModule,
+  (moduleKey) => {
+    if (moduleKey) wakeStore.ensureAwake(moduleKey)
+  },
+  { immediate: true },
+)
+
+const isWakingUp = computed(() => {
+  const moduleKey = currentModule.value
+  return moduleKey ? wakeStore.checking[moduleKey] || wakeStore.failed[moduleKey] : false
+})
+const wakeFailed = computed(() => {
+  const moduleKey = currentModule.value
+  return moduleKey ? wakeStore.failed[moduleKey] : false
+})
+
+function retryWake(): void {
+  const moduleKey = currentModule.value
+  if (moduleKey) wakeStore.retry(moduleKey)
+}
 
 const SidebarComponent = computed(() => (isCorredores.value ? BioAppSidebar : AppSidebar))
 const DataSourcesComponent = computed(() => (isCorredores.value ? BioDataSourcesModal : DataSourcesModal))
@@ -24,7 +54,9 @@ const dataSourcesLabel = computed(() =>
 </script>
 
 <template>
-  <RouterView v-if="hideChrome" />
+  <WakeUpOverlay v-if="isWakingUp" :failed="wakeFailed" @retry="retryWake" />
+
+  <RouterView v-else-if="hideChrome" />
 
   <div v-else class="flex h-dvh bg-gray-50">
     <div

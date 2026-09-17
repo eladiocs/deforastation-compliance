@@ -59,6 +59,11 @@ def create_analysis(
     db.add(analysis)
     db.commit()
     db.refresh(analysis)
+
+    analysis.report_pdf_data = generate_report_pdf(analysis, parcel.name)
+    db.commit()
+    db.refresh(analysis)
+
     return analysis
 
 
@@ -89,7 +94,9 @@ def delete_analysis(analysis_id: int, db: Session = Depends(get_db)) -> None:
 def download_analysis_report(analysis_id: int, db: Session = Depends(get_db)) -> Response:
     analysis = _get_analysis_or_404(analysis_id, db)
     parcel = _get_parcel_or_404(analysis.parcel_id, db)
-    pdf_bytes = generate_report_pdf(analysis, parcel.name)
+    # Older rows created before the PDF was persisted fall back to generating it
+    # on the fly; it's fully reproducible from the stored analysis + parcel name.
+    pdf_bytes = analysis.report_pdf_data or generate_report_pdf(analysis, parcel.name)
     slug = "".join(c if c.isalnum() else "-" for c in parcel.name.lower()).strip("-") or "informe"
     return Response(
         content=pdf_bytes,

@@ -40,3 +40,10 @@ export const api = {
   deleteAnalysis: (id: string) => http.delete(`/api/v1/analyses/${id}`).then(() => undefined),
   reportUrl: (analysisId: string) => `${apiUrl}/api/v1/analyses/${analysisId}/report`,
 }
+
+export function checkHealth(): Promise<boolean> {
+  return http
+    .get('/health', { timeout: 5_000 })
+    .then(() => true)
+    .catch(() => false)
+}

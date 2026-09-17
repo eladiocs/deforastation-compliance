@@ -23,7 +23,6 @@ services:
       GEE_SERVICE_ACCOUNT_EMAIL: ${GEE_SERVICE_ACCOUNT_EMAIL}
       GEE_KEY_PATH: secrets/gee-key.json
       GEE_PROJECT_ID: ${GEE_PROJECT_ID}
-      REPORTS_DIR: /app/reports
     ports:
       - "8010:8000"
     volumes:
