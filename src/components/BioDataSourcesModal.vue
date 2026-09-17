@@ -44,7 +44,7 @@ const SOURCES: SourceRow[] = [
     </template>
 
     <div class="overflow-x-auto">
-      <table class="w-full min-w-160 text-left text-sm">
+      <table class="w-full min-w-[640px] text-left text-sm">
         <thead>
           <tr class="border-b border-gray-200 text-xs uppercase text-gray-500">
             <th class="py-2 pr-4">Dato / cálculo</th>
