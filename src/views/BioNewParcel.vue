@@ -62,7 +62,7 @@ function handleCancel() {
         >
           Sube un archivo geojson
         </button>
-        o dibuje un polígono.
+        o dibuja un polígono: pulsa el icono de polígono, marca cada vértice con clic y cierra la forma haciendo clic en el primer punto o pulsando "Finish".
         <span v-if="uploadedFileName" class="ml-1 text-xs text-gray-400">({{ uploadedFileName }})</span>
       </p>
     </div>

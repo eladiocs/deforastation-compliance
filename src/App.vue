@@ -18,6 +18,10 @@ const dataSourcesOpen = ref(false)
 const hideChrome = computed(() => Boolean(route.meta.hideChrome))
 const isCorredores = computed(() => route.meta.module === 'corredores')
 
+watch(hideChrome, (hidden) => {
+  if (!hidden) sidebarOpen.value = false
+})
+
 const currentModule = computed<BackendModule | undefined>(() => {
   const moduleKey = route.meta.module
   return moduleKey === 'deforestacion' || moduleKey === 'corredores' ? moduleKey : undefined

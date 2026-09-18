@@ -163,10 +163,8 @@ function handleDeleteConfirm() {
 </script>
 
 <template>
-  <div v-if="loadingParcel" class="py-12 text-center text-sm text-gray-400">Cargando parcela…</div>
-  <div v-else-if="loadError || !parcel" class="py-12 text-center text-sm text-red-600">
-    {{ loadError ?? 'Parcela no encontrada.' }}
-  </div>
+  <EmptyState v-if="loadingParcel" title="Cargando parcela…" />
+  <EmptyState v-else-if="loadError || !parcel" title="No se pudo conectar con la API" :description="loadError ?? 'Parcela no encontrada.'" />
 
   <template v-else>
     <div class="mb-4 flex items-center gap-12">
