@@ -64,9 +64,9 @@ LEISURE_RESISTANCE = {
     "pitch": 5.0,
 }
 MAJOR_HIGHWAY_VALUES = {"motorway", "trunk", "primary", "motorway_link", "trunk_link", "primary_link"}
-MAJOR_HIGHWAY_RESISTANCE = 40.0
+MAJOR_HIGHWAY_RESISTANCE = 200.0  # near-impassable for terrestrial mammals without a dedicated crossing
 MINOR_HIGHWAY_RESISTANCE = 15.0
-MAJOR_HIGHWAY_BUFFER_M = 12.0
+MAJOR_HIGHWAY_BUFFER_M = 30.0  # carriageways + median + shoulders + fencing
 MINOR_HIGHWAY_BUFFER_M = 4.0
 WATERWAY_BUFFER_M = 6.0
 

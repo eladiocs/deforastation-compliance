@@ -211,7 +211,7 @@ def shortest_path(
     return ShortestPathResult(patch_ids=path, total_cost=cost)
 
 
-def _split_large_geom(geom, name: str) -> list[tuple[float, str, float, float]]:
+def _split_large_geom(geom, name: str) -> list[tuple[float, str, float, float, object]]:
     """Splits a habitat polygon far bigger than one clamped patch circle into a
     regular grid of sub-pieces, so a whole park doesn't collapse into a single
     unrealistic circle at one arbitrary point."""
@@ -224,13 +224,13 @@ def _split_large_geom(geom, name: str) -> list[tuple[float, str, float, float]]:
             piece = geom.intersection(box(x, y, x + SPLIT_CELL_M, y + SPLIT_CELL_M))
             if not piece.is_empty and piece.geom_type in ("Polygon", "MultiPolygon") and piece.area >= MIN_HABITAT_AREA_M2:
                 centroid = piece.centroid
-                pieces.append((piece.area, name, centroid.x, centroid.y))
+                pieces.append((piece.area, name, centroid.x, centroid.y, piece))
             y += SPLIT_CELL_M
         x += SPLIT_CELL_M
     return pieces
 
 
-def _select_spread(pieces: list[tuple[float, str, float, float]], cap: int) -> list[tuple[float, str, float, float]]:
+def _select_spread(pieces: list[tuple[float, str, float, float, object]], cap: int) -> list[tuple[float, str, float, float, object]]:
     """Picks `cap` pieces favoring both size and spatial spread: starts from
     the largest, then greedily adds whichever remaining piece is farthest
     from everything already picked. Plain top-N-by-area would pick this
@@ -252,12 +252,20 @@ def _select_spread(pieces: list[tuple[float, str, float, float]], cap: int) -> l
     return selected
 
 
-def generate_study_area(polygon: list[LatLngPoint], count: int) -> tuple[list[Patch], dict[str, str]]:
-    """Returns the study area's patches plus a patch-id -> source-polygon-id
-    map: patches split from the same oversized source polygon (see
-    _split_large_geom) share a source id, so build_corridors can always
+def generate_study_area(
+    polygon: list[LatLngPoint], count: int
+) -> tuple[list[Patch], dict[str, str], dict[str, object]]:
+    """Returns the study area's patches, a patch-id -> source-polygon-id map
+    (patches split from the same oversized source polygon, see
+    _split_large_geom, share a source id, so build_corridors can always
     connect them to each other regardless of distance — they're pieces of one
-    contiguous habitat block, not separate fragments needing dispersal."""
+    contiguous habitat block, not separate fragments needing dispersal), and a
+    patch-id -> real habitat geometry map (EPSG:3857): a patch's `radius` is
+    only a circle approximation for display/dispersal math, sized from the
+    habitat's area — for a large or elongated polygon that circle can extend
+    well past where the real habitat actually is, so anything checking overlap
+    with a specific geometry (e.g. analyze_impact's footprint intersection)
+    must use this real shape instead of `Point(lat, lng).buffer(radius)`."""
     ring = [(p.lng, p.lat) for p in polygon]
     polygon_4326 = gpd.GeoSeries([Polygon(ring)], crs="EPSG:4326").buffer(0)
     polygon_3857 = polygon_4326.to_crs(epsg=3857).iloc[0]
@@ -290,21 +298,23 @@ def generate_study_area(polygon: list[LatLngPoint], count: int) -> tuple[list[Pa
                 candidates.append((*piece, source_id))
         else:
             centroid = clipped.centroid
-            candidates.append((area, name, centroid.x, centroid.y, source_id))
+            candidates.append((area, name, centroid.x, centroid.y, clipped, source_id))
 
     candidates.sort(key=lambda c: c[0], reverse=True)
     candidates = candidates[:count]
 
     patches = []
     source_groups: dict[str, str] = {}
-    for i, (area, name, x, y, source_id) in enumerate(candidates):
+    patch_geometries: dict[str, object] = {}
+    for i, (area, name, x, y, geom, source_id) in enumerate(candidates):
         lat, lng = terrain.to_wgs84(x, y)
         radius = min(max(math.sqrt(area / math.pi), MIN_PATCH_RADIUS_M), MAX_PATCH_RADIUS_M)
         patch_name = name if isinstance(name, str) and name.strip() else f"Zona verde {i + 1}"
         patch_id = f"p{i}"
         patches.append(Patch(id=patch_id, name=patch_name, lat=lat, lng=lng, radius=radius))
         source_groups[patch_id] = source_id
-    return patches, source_groups
+        patch_geometries[patch_id] = geom
+    return patches, source_groups, patch_geometries
 
 
 def _buffer_polygon_wgs84(polygon: list[LatLngPoint], margin_m: float) -> list[LatLngPoint]:
@@ -352,12 +362,19 @@ def analyze_impact(
     surviving corridor that must detour around it becomes visibly costlier."""
     margin = max(dispersal_distance, 200.0)
     window_polygon = _buffer_polygon_wgs84(footprint, margin)
-    baseline_patches, source_groups = generate_study_area(window_polygon, count)
+    baseline_patches, source_groups, patch_geometries = generate_study_area(window_polygon, count)
 
     footprint_3857 = _footprint_to_3857(footprint)
     patches_3857 = patches_to_geoframe(baseline_patches)
-    circles = [pt.buffer(p.radius) for pt, p in zip(patches_3857.geometry, baseline_patches)]
-    lost_ids = {p.id for p, circle in zip(baseline_patches, circles) if circle.intersects(footprint_3857)}
+    # Uses each patch's real habitat geometry, not its display circle (patch.radius
+    # is a circle approximation sized from area — for a large/elongated polygon
+    # that circle can extend well past where the habitat actually is, which would
+    # otherwise mark a patch "destroyed" by a footprint it never really touches).
+    lost_ids = {
+        p.id
+        for p in baseline_patches
+        if p.id in patch_geometries and patch_geometries[p.id].intersects(footprint_3857)
+    }
 
     patches_lost = [p for p in baseline_patches if p.id in lost_ids]
     scenario_patches = [p for p in baseline_patches if p.id not in lost_ids]

@@ -48,7 +48,7 @@ OSM_FETCH_ERROR_DETAIL = (
 @app.post("/study-area/generate", response_model=list[Patch])
 def generate_study_area(request: GenerateStudyAreaRequest) -> list[Patch]:
     try:
-        patches, _source_groups = graph_service.generate_study_area(request.polygon, request.count)
+        patches, _source_groups, _patch_geometries = graph_service.generate_study_area(request.polygon, request.count)
         return patches
     except Exception as exc:
         raise HTTPException(status_code=502, detail=OSM_FETCH_ERROR_DETAIL) from exc

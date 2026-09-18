@@ -112,7 +112,7 @@ function renderFootprint() {
   if (props.footprint.length >= 3) {
     L.polygon(
       props.footprint.map((p) => [p.lat, p.lng] as [number, number]),
-      { color: '#123a42', weight: 2.5, fillColor: '#123a42', fillOpacity: 0.12 },
+      { color: '#eab308', weight: 2.5, fillColor: '#eab308', fillOpacity: 0.12 },
     ).addTo(footprintLayer)
   }
 }

@@ -202,7 +202,7 @@ function handleDeleteConfirm() {
           :patches="activeResult?.patches ?? []"
           :patches-lost-ids="lostIds"
           :patches-isolated-ids="isolatedIds"
-          :edges="activeResult ? (activeResult.scenario.edges.length ? activeResult.scenario.edges : activeResult.baseline.edges) : []"
+          :edges="activeResult?.baseline.edges ?? []"
           :edge-status="edgeStatus"
           :footprint="parcel.footprint"
           :center="center"
@@ -236,7 +236,7 @@ function handleDeleteConfirm() {
     <EmptyState
       v-if="analyses.length === 0"
       title="Todavía no se ha ejecutado ningún análisis"
-      description="Pulsa &quot;Generar análisis&quot; para calcular el impacto sobre los corredores ecológicos."
+      description="Pulsa &quot;Generar análisis&quot; para calcular el impacto sobre los corredores biológicos."
     />
     <template v-else>
       <div class="space-y-3 md:hidden">

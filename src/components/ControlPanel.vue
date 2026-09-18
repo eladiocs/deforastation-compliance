@@ -78,7 +78,7 @@ function updateMeta(field: keyof ProjectMeta, value: string) {
       <button
         class="rounded-md bg-[#5fb92c] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#4ea023] disabled:cursor-not-allowed disabled:opacity-50"
         :disabled="busy"
-        title="Vuelve a ejecutar el cálculo de corredores ecológicos"
+        title="Vuelve a ejecutar el cálculo de corredores biológicos"
         @click="emit('generateAnalysis')"
       >
         Generar análisis
