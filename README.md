@@ -156,7 +156,6 @@ Dashboard → **New > Web Service** → mismo repo `eladiocs/deforastation-compl
     PYTHONPATH=/app
     CORS_ORIGINS=...                         # igual que el otro backend, se rellena en el paso 3
     ```
-    No hace falta **Secret Files** aquí (este servicio no usa GEE ni firma reportes).
 
 Tras el primer deploy, aplica sus migraciones (crean el schema `corredores` — no tocan las
 tablas del otro backend):
@@ -172,6 +171,49 @@ mismo `DATABASE_URL` de Supabase:
 docker compose run --rm --no-deps -e DATABASE_URL="postgresql+psycopg://postgres.<ref>:<password>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres" api-corredores alembic upgrade head
 ```
 
+### 2c. Backend inmuebles — Render Web Service (Docker)
+
+Tercer backend, mismo patrón, **usa el mismo Supabase del paso 1** (schema propio `inmuebles`,
+ver `backend-inmuebles/app/database.py`).
+
+Dashboard → **New > Web Service** → mismo repo `eladiocs/deforastation-compliance`.
+
+- **Name**: `deforcompliance-api-inmuebles`.
+- **Language**: `Docker`.
+- **Branch**: `main`.
+- **Region**: `Frankfurt (EU Central)`.
+- **Root Directory**: `backend-inmuebles`.
+- **Instance Type**: `Free` para el demo (mismo aviso de "sleep").
+- **Advanced**:
+  - **Health Check Path**: `/health`
+  - **Port**: `8000`
+  - **Auto-Deploy**: `On Commit`
+  - **Environment Variables**:
+    ```
+    DATABASE_URL=postgresql+psycopg://...   # el MISMO valor de los pasos 1/2, misma base de datos
+    PYTHONPATH=/app
+    GEE_SERVICE_ACCOUNT_EMAIL=...
+    GEE_KEY_PATH=/etc/secrets/gee-key.json
+    GEE_PROJECT_ID=...
+    CORS_ORIGINS=...                         # se rellena en el paso 3
+    ```
+  - **Secret Files**:
+    - **Filename** `gee-key.json` y **Contents** = contenido de tu
+      `backend-inmuebles/secrets/gee-key.json` local.
+
+Tras el primer deploy, aplica sus migraciones (crean el schema `inmuebles`):
+
+```bash
+alembic upgrade head
+```
+
+Mismo aviso que arriba: en plan **Free** sin Shell, córrelo desde tu propio PC apuntando al
+mismo `DATABASE_URL` de Supabase:
+
+```bash
+docker compose run --rm --no-deps -e DATABASE_URL="postgresql+psycopg://postgres.<ref>:<password>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres" api-inmuebles alembic upgrade head
+```
+
 ### 3. Frontend — Render Static Site
 
 1. Dashboard → **New > Static Site** → mismo repo `eladiocs/deforastation-compliance`.
@@ -184,21 +226,23 @@ docker compose run --rm --no-deps -e DATABASE_URL="postgresql+psycopg://postgres
 5. **Build Command**: `npm install; npm run build` (equivalente a `npm ci && npm run build`)
    — **Publish Directory**: `dist`.
 6. **Environment Variables** (se hornean en el build, Vite las lee en build-time — un solo
-   Static Site sirve ambos módulos, cada uno habla con su propio backend):
+   Static Site sirve los tres módulos, cada uno habla con su propio backend):
    ```
    VITE_API_URL=https://deforcompliance-api.onrender.com
    VITE_API_URL_CORREDORES=https://deforcompliance-api-corredores.onrender.com
+   VITE_API_URL_INMUEBLES=https://deforcompliance-api-inmuebles.onrender.com
    ```
 7. Crear el Static Site y esperar al build.
 8. Una vez tengas la URL pública del Static Site (tipo
-   `https://deforcompliance-front.onrender.com`), vuelve a **ambos** backends (pasos 2 y 2b) y
-   pon `CORS_ORIGINS=https://deforcompliance-front.onrender.com` (o tu dominio propio si
-   configuras uno) en cada uno, y redepliega los dos.
+   `https://deforcompliance-front.onrender.com`), vuelve a **los tres** backends (pasos 2, 2b y
+   2c) y pon `CORS_ORIGINS=https://deforcompliance-front.onrender.com` (o tu dominio propio si
+   configuras uno) en cada uno, y redepliega los tres.
 
 ### 4. Verificación
 
 - `GET https://deforcompliance-api.onrender.com/health` → `{"status": "ok"}`
 - `GET https://deforcompliance-api-corredores.onrender.com/health` → `{"status": "ok"}`
-- Abrir el Static Site en el navegador: la home debe mostrar las dos cards; entrar a
-  "Anti-deforestación" y a "Corredores biológicos" y comprobar que cada uno carga sus parcelas
-  sin errores de CORS en la consola (cada módulo pega a un backend distinto).
+- `GET https://deforcompliance-api-inmuebles.onrender.com/health` → `{"status": "ok"}`
+- Abrir el Static Site en el navegador: la home debe mostrar las cards de los tres módulos y
+  comprobar que cada uno carga sus parcelas sin errores de CORS en la consola (cada módulo pega
+  a un backend distinto).

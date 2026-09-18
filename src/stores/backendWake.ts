@@ -2,13 +2,15 @@ import { defineStore } from 'pinia'
 import { reactive } from 'vue'
 
 import { checkHealth as checkDeforestacionHealth } from '@/api/client'
+import { checkHealth as checkInmueblesHealth } from '@/api/inmueblesClient'
 import { checkHealth as checkCorredoresHealth } from '@/lib/api'
 
-export type BackendModule = 'deforestacion' | 'corredores'
+export type BackendModule = 'deforestacion' | 'corredores' | 'inmuebles'
 
 const CHECKERS: Record<BackendModule, () => Promise<boolean>> = {
   deforestacion: checkDeforestacionHealth,
   corredores: checkCorredoresHealth,
+  inmuebles: checkInmueblesHealth,
 }
 
 // Render's free tier sleeps the backend after 15 min idle and takes ~30-50s to
@@ -23,9 +25,21 @@ function sleep(ms: number): Promise<void> {
 }
 
 export const useBackendWakeStore = defineStore('backendWake', () => {
-  const checking = reactive<Record<BackendModule, boolean>>({ deforestacion: false, corredores: false })
-  const ready = reactive<Record<BackendModule, boolean>>({ deforestacion: false, corredores: false })
-  const failed = reactive<Record<BackendModule, boolean>>({ deforestacion: false, corredores: false })
+  const checking = reactive<Record<BackendModule, boolean>>({
+    deforestacion: false,
+    corredores: false,
+    inmuebles: false,
+  })
+  const ready = reactive<Record<BackendModule, boolean>>({
+    deforestacion: false,
+    corredores: false,
+    inmuebles: false,
+  })
+  const failed = reactive<Record<BackendModule, boolean>>({
+    deforestacion: false,
+    corredores: false,
+    inmuebles: false,
+  })
 
   async function ensureAwake(moduleKey: BackendModule): Promise<void> {
     if (ready[moduleKey] || checking[moduleKey]) return

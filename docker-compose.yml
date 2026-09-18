@@ -47,5 +47,24 @@ services:
       db:
         condition: service_healthy
 
+  api-inmuebles:
+    build: ./backend-inmuebles
+    environment:
+      # Misma base de datos que "api" (Supabase no permite un segundo proyecto);
+      # este servicio gestiona únicamente su propio schema "inmuebles".
+      DATABASE_URL: postgresql+psycopg://deforcompliance:deforcompliance@db:5432/deforcompliance
+      CORS_ORIGINS: "http://localhost:5174"
+      PYTHONPATH: /app
+      GEE_SERVICE_ACCOUNT_EMAIL: ${GEE_SERVICE_ACCOUNT_EMAIL}
+      GEE_KEY_PATH: secrets/gee-key.json
+      GEE_PROJECT_ID: ${GEE_PROJECT_ID}
+    ports:
+      - "8200:8000"
+    volumes:
+      - ./backend-inmuebles:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   deforcompliance_db_data:

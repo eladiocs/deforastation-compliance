@@ -33,6 +33,18 @@ const router = createRouter({
       component: () => import('@/views/BioParcelDetail.vue'),
       meta: { module: 'corredores' },
     },
+    {
+      path: '/inmuebles',
+      name: 'inmuebles-new-parcel',
+      component: () => import('@/views/InmueblesNewParcel.vue'),
+      meta: { module: 'inmuebles' },
+    },
+    {
+      path: '/inmuebles/parcels/:id',
+      name: 'inmuebles-parcel-detail',
+      component: () => import('@/views/InmueblesParcelDetail.vue'),
+      meta: { module: 'inmuebles' },
+    },
   ],
 })
 

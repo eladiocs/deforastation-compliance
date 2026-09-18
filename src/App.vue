@@ -4,8 +4,10 @@ import { useRoute } from 'vue-router'
 import { Bars3Icon, InformationCircleIcon } from '@heroicons/vue/24/outline'
 import AppSidebar from '@/components/AppSidebar.vue'
 import BioAppSidebar from '@/components/BioAppSidebar.vue'
+import InmueblesAppSidebar from '@/components/InmueblesAppSidebar.vue'
 import DataSourcesModal from '@/components/DataSourcesModal.vue'
 import BioDataSourcesModal from '@/components/BioDataSourcesModal.vue'
+import InmueblesDataSourcesModal from '@/components/InmueblesDataSourcesModal.vue'
 import WakeUpOverlay from '@/components/WakeUpOverlay.vue'
 import { useBackendWakeStore, type BackendModule } from '@/stores/backendWake'
 
@@ -17,6 +19,7 @@ const dataSourcesOpen = ref(false)
 
 const hideChrome = computed(() => Boolean(route.meta.hideChrome))
 const isCorredores = computed(() => route.meta.module === 'corredores')
+const isInmuebles = computed(() => route.meta.module === 'inmuebles')
 
 watch(hideChrome, (hidden) => {
   if (!hidden) sidebarOpen.value = false
@@ -24,7 +27,9 @@ watch(hideChrome, (hidden) => {
 
 const currentModule = computed<BackendModule | undefined>(() => {
   const moduleKey = route.meta.module
-  return moduleKey === 'deforestacion' || moduleKey === 'corredores' ? moduleKey : undefined
+  return moduleKey === 'deforestacion' || moduleKey === 'corredores' || moduleKey === 'inmuebles'
+    ? moduleKey
+    : undefined
 })
 
 watch(
@@ -49,11 +54,23 @@ function retryWake(): void {
   if (moduleKey) wakeStore.retry(moduleKey)
 }
 
-const SidebarComponent = computed(() => (isCorredores.value ? BioAppSidebar : AppSidebar))
-const DataSourcesComponent = computed(() => (isCorredores.value ? BioDataSourcesModal : DataSourcesModal))
-const headerTitle = computed(() => (isCorredores.value ? 'BioConnect' : 'Anti-deforestación'))
+const SidebarComponent = computed(() => {
+  if (isCorredores.value) return BioAppSidebar
+  if (isInmuebles.value) return InmueblesAppSidebar
+  return AppSidebar
+})
+const DataSourcesComponent = computed(() => {
+  if (isCorredores.value) return BioDataSourcesModal
+  if (isInmuebles.value) return InmueblesDataSourcesModal
+  return DataSourcesModal
+})
+const headerTitle = computed(() => {
+  if (isCorredores.value) return 'BioConnect'
+  if (isInmuebles.value) return 'Riesgo inmobiliario'
+  return 'Anti-deforestación'
+})
 const dataSourcesLabel = computed(() =>
-  isCorredores.value ? 'Fuentes de datos y cálculos' : 'Procedencia de los datos y cálculos',
+  isCorredores.value || isInmuebles.value ? 'Fuentes de datos y cálculos' : 'Procedencia de los datos y cálculos',
 )
 </script>
 

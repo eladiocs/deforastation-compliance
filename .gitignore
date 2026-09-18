@@ -5,6 +5,7 @@ __pycache__/
 backend/secrets/*.json
 backend/secrets/*.pem
 backend/reports/*.pdf
+backend-inmuebles/secrets/*.json
 .pytest_cache/
 
 node_modules/

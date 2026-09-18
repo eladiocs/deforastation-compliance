@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { ShieldCheckIcon, GlobeAmericasIcon } from '@heroicons/vue/24/outline'
+import { ShieldCheckIcon, GlobeAmericasIcon, HomeModernIcon } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
 
@@ -17,17 +17,23 @@ const CARDS = [
     icon: GlobeAmericasIcon,
     to: '/corredores',
   },
+  {
+    title: 'Riesgo inmobiliario',
+    description: 'Riesgo de inundación por inmueble, a partir de su ubicación.',
+    icon: HomeModernIcon,
+    to: '/inmuebles',
+  },
 ] as const
 </script>
 
 <template>
   <div class="flex min-h-dvh items-center justify-center bg-gray-50 px-4 py-12">
-    <div class="w-full max-w-3xl">
+    <div class="w-full max-w-4xl">
       <h1 class="text-center text-2xl font-bold tracking-wide text-[#123a42] sm:text-3xl">
         Informes de impacto ambiental
       </h1>
 
-      <div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <button
           v-for="card in CARDS"
           :key="card.to"
