@@ -29,9 +29,9 @@ const ndviValues = () => props.analysis.ndvi_quarterly_series.map((p) => p.ndvi_
         :href="api.reportUrl(analysis.id)"
         target="_blank"
         rel="noopener"
-        class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+        class="rounded-md bg-[#5fb92c] px-4 py-2 text-sm font-medium text-white hover:bg-[#4ea023]"
       >
-        Descargar
+        Descargar PDF
       </a>
     </div>
 

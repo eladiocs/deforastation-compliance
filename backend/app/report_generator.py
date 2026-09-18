@@ -11,6 +11,7 @@ altered.
 import hashlib
 import io
 from datetime import datetime
+from pathlib import Path
 
 import matplotlib
 
@@ -23,6 +24,8 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import (
     Image,
     KeepTogether,
@@ -35,6 +38,68 @@ from reportlab.platypus import (
 from shapely.geometry import shape
 
 from app.signing import public_key_pem, sign_message
+
+# Logo como marca de agua centrada al pie de página, solo en la última página del
+# documento — igual que en el informe de droughtwatch (proyecto hermano). El margen
+# inferior de la página de verificación (siempre la última del PDF final) se amplía
+# para reservarle hueco y que ningún flowable se le solape.
+_LOGO_PATH = Path(__file__).parent / "assets" / "logo-empresa.png"
+_logo_reader = ImageReader(str(_LOGO_PATH)) if _LOGO_PATH.exists() else None
+_LOGO_WIDTH, _LOGO_HEIGHT = _logo_reader.getSize() if _logo_reader else (0, 0)
+
+WATERMARK_WIDTH_FRACTION = 0.22
+WATERMARK_BOTTOM_OFFSET = 0.6 * cm
+WATERMARK_CONTENT_GAP = 0.5 * cm
+WATERMARK_OPACITY = 0.26
+_WATERMARK_WIDTH = A4[0] * WATERMARK_WIDTH_FRACTION
+_WATERMARK_HEIGHT = _WATERMARK_WIDTH * (_LOGO_HEIGHT / _LOGO_WIDTH) if _logo_reader else 0
+CONTENT_BOTTOM_MARGIN = WATERMARK_BOTTOM_OFFSET + _WATERMARK_HEIGHT + WATERMARK_CONTENT_GAP
+
+
+def _draw_watermark(canvas: Canvas) -> None:
+    if _logo_reader is None:
+        return
+    page_width, _ = canvas._pagesize
+    x = (page_width - _WATERMARK_WIDTH) / 2
+    canvas.saveState()
+    canvas.setFillAlpha(WATERMARK_OPACITY)
+    canvas.drawImage(
+        _logo_reader,
+        x,
+        WATERMARK_BOTTOM_OFFSET,
+        width=_WATERMARK_WIDTH,
+        height=_WATERMARK_HEIGHT,
+        mask="auto",
+    )
+    canvas.restoreState()
+
+
+class _LastPageWatermarkCanvas(Canvas):
+    """Canvas that draws the watermark only on the document's final page.
+
+    reportlab flows pages one at a time and doesn't know the total page count
+    until the document finishes building, so each page's state is buffered on
+    showPage() and only replayed — with the watermark added — once save() is
+    called and the true last page is known.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._saved_page_states = []
+
+    def showPage(self):
+        self._saved_page_states.append(dict(self.__dict__))
+        self._startPage()
+
+    def save(self):
+        num_pages = len(self._saved_page_states)
+        for i, state in enumerate(self._saved_page_states):
+            self.__dict__.update(state)
+            if i == num_pages - 1:
+                _draw_watermark(self)
+            super().showPage()
+        super().save()
+
 
 STATUS_LABELS = {
     "compliant": "CONFORME — sin deforestación detectada tras la fecha de corte",
@@ -263,8 +328,8 @@ def _build_verification_pdf(content_sha256: str, signature_b64: str, analysis_id
     ]
 
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=1.5 * cm, bottomMargin=1.5 * cm)
-    doc.build(story)
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=1.5 * cm, bottomMargin=CONTENT_BOTTOM_MARGIN)
+    doc.build(story, canvasmaker=_LastPageWatermarkCanvas)
     return buf.getvalue()
 
 

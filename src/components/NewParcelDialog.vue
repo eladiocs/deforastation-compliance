@@ -95,7 +95,7 @@ function confirm(): void {
           Cancelar
         </button>
         <button
-          class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:pointer-events-none disabled:opacity-50"
+          class="rounded-md bg-[#5fb92c] px-3 py-2 text-sm font-medium text-white hover:bg-[#4ea023] disabled:pointer-events-none disabled:opacity-50"
           :disabled="!name.trim() || !commodity || isSaving"
           @click="confirm"
         >
