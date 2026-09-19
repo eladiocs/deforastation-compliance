@@ -1,10 +1,48 @@
-import axios from 'axios'
-
 import type { Analysis, GeoJsonPolygon, Parcel } from './types'
 
 const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8010'
 
-const http = axios.create({ baseURL: apiUrl })
+const REQUEST_TIMEOUT_MS = 120_000
+
+async function timedFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  try {
+    return await fetch(`${apiUrl}${path}`, { ...init, signal: controller.signal })
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('El análisis tardó demasiado y se canceló. Inténtalo de nuevo en unos minutos.')
+    }
+    throw err
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+async function handleResponse<T>(response: Response, path: string): Promise<T> {
+  if (!response.ok) {
+    const detail = await response.json().catch(() => null)
+    throw new Error(detail?.detail ?? `Error ${response.status} al llamar a ${path}`)
+  }
+  if (response.status === 204) return undefined as T
+  return response.json() as Promise<T>
+}
+
+function getJSON<T>(path: string): Promise<T> {
+  return timedFetch(path).then((r) => handleResponse<T>(r, path))
+}
+
+function sendJSON<T>(path: string, method: string, body: unknown): Promise<T> {
+  return timedFetch(path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then((r) => handleResponse<T>(r, path))
+}
+
+function deleteRequest(path: string): Promise<void> {
+  return timedFetch(path, { method: 'DELETE' }).then((r) => handleResponse<void>(r, path))
+}
 
 export interface CreateParcelPayload {
   name: string
@@ -25,25 +63,27 @@ export interface CreateAnalysisPayload {
 }
 
 export const api = {
-  listParcels: () => http.get<Parcel[]>('/api/v1/parcels').then((r) => r.data),
-  getParcel: (id: string) => http.get<Parcel>(`/api/v1/parcels/${id}`).then((r) => r.data),
-  createParcel: (payload: CreateParcelPayload) =>
-    http.post<Parcel>('/api/v1/parcels', payload).then((r) => r.data),
+  listParcels: () => getJSON<Parcel[]>('/api/v1/parcels'),
+  getParcel: (id: string) => getJSON<Parcel>(`/api/v1/parcels/${id}`),
+  createParcel: (payload: CreateParcelPayload) => sendJSON<Parcel>('/api/v1/parcels', 'POST', payload),
   updateParcel: (id: string, payload: UpdateParcelPayload) =>
-    http.patch<Parcel>(`/api/v1/parcels/${id}`, payload).then((r) => r.data),
-  deleteParcel: (id: string) => http.delete(`/api/v1/parcels/${id}`).then(() => undefined),
-  listParcelAnalyses: (parcelId: string) =>
-    http.get<Analysis[]>(`/api/v1/parcels/${parcelId}/analyses`).then((r) => r.data),
+    sendJSON<Parcel>(`/api/v1/parcels/${id}`, 'PATCH', payload),
+  deleteParcel: (id: string) => deleteRequest(`/api/v1/parcels/${id}`),
+  listParcelAnalyses: (parcelId: string) => getJSON<Analysis[]>(`/api/v1/parcels/${parcelId}/analyses`),
   createAnalysis: (parcelId: string, payload: CreateAnalysisPayload) =>
-    http.post<Analysis>(`/api/v1/parcels/${parcelId}/analyses`, payload).then((r) => r.data),
-  getAnalysis: (id: string) => http.get<Analysis>(`/api/v1/analyses/${id}`).then((r) => r.data),
-  deleteAnalysis: (id: string) => http.delete(`/api/v1/analyses/${id}`).then(() => undefined),
+    sendJSON<Analysis>(`/api/v1/parcels/${parcelId}/analyses`, 'POST', payload),
+  getAnalysis: (id: string) => getJSON<Analysis>(`/api/v1/analyses/${id}`),
+  deleteAnalysis: (id: string) => deleteRequest(`/api/v1/analyses/${id}`),
   reportUrl: (analysisId: string) => `${apiUrl}/api/v1/analyses/${analysisId}/report`,
 }
 
+const HEALTH_CHECK_TIMEOUT_MS = 5_000
+
 export function checkHealth(): Promise<boolean> {
-  return http
-    .get('/health', { timeout: 5_000 })
-    .then(() => true)
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS)
+  return fetch(`${apiUrl}/health`, { signal: controller.signal })
+    .then((r) => r.ok)
     .catch(() => false)
+    .finally(() => clearTimeout(timeoutId))
 }
