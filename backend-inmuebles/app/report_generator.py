@@ -175,9 +175,10 @@ def generate_report_pdf(analysis: models.Analysis, parcel_name: str, address: st
     story.append(Spacer(1, 16))
     story.append(
         Paragraph(
-            "Este informe es una herramienta de apoyo técnico y no sustituye un "
-            "estudio hidrológico-hidráulico formal ni las capas oficiales de "
-            "zonas inundables aplicables en la jurisdicción del inmueble.",
+            "Este informe es una herramienta de apoyo técnico que complementa las "
+            "capas oficiales de zonas inundables aplicables en la jurisdicción del "
+            "inmueble, sin sustituirlas ni sustituir un estudio "
+            "hidrológico-hidráulico formal.",
             _styles["Footer"],
         )
     )

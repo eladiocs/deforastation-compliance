@@ -234,9 +234,12 @@ def analyze_point(lat: float, lng: float, buffer_radius_m: float) -> dict:
         "La elevación relativa aproxima cuánto sobresale el punto sobre el "
         "terreno más bajo en su radio de análisis (proxy simplificado, no un "
         "modelo hidráulico completo).",
-        "Este resultado es una herramienta de apoyo y no sustituye un estudio "
-        "hidrológico-hidráulico formal ni las capas oficiales de zonas "
-        "inundables (p. ej. SNCZI en España) para trámites regulatorios.",
+        "Este resultado es una herramienta de apoyo y complementa (sin sustituir) "
+        "las capas oficiales de zonas inundables (p. ej. SNCZI en España), "
+        "detectando cauces y barrancos que estas, al basarse solo en cursos de "
+        "agua formalmente estudiados, pueden no tener mapeados. No reemplaza un "
+        "estudio hidrológico-hidráulico formal ni dichas capas oficiales para "
+        "trámites regulatorios.",
     ]
 
     return {

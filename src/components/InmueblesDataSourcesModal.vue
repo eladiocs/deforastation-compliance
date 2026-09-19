@@ -73,10 +73,12 @@ const SOURCES: SourceRow[] = [
     <div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
       <p class="mt-1.5 text-sm text-amber-800">
         Este score es una <strong>herramienta de apoyo</strong> basada en datasets globales de
-        propósito general, no un estudio hidrológico-hidráulico formal. No sustituye las capas
+        propósito general, no un estudio hidrológico-hidráulico formal. Complementa a las capas
         oficiales de zonas inundables aplicables en la jurisdicción del inmueble (por ejemplo, el
-        <strong>SNCZI</strong> en España), que deben consultarse para cualquier trámite regulatorio,
-        de seguro o de compraventa.
+        <strong>SNCZI</strong> en España) detectando cauces y barrancos que estas capas, al basarse
+        solo en cursos de agua formalmente estudiados, pueden no tener mapeados — pero no las
+        sustituye: deben consultarse igualmente para cualquier trámite regulatorio, de seguro o de
+        compraventa.
       </p>
     </div>
   </Modal>
