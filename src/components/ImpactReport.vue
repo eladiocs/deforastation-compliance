@@ -50,7 +50,7 @@ const reportUrl = computed(() => api.analysisReportUrl(props.analysisId))
         </h1>
         <p v-if="projectMeta.description" class="mt-1 text-sm text-gray-600">{{ projectMeta.description }}</p>
         <p class="mt-2 text-xs text-gray-400">
-          Generado el {{ generatedAtLabel }}<span v-if="projectMeta.preparedBy"> · Elaborado por {{ projectMeta.preparedBy }}</span>
+          Generado el {{ generatedAtLabel }} · Distancia de dispersión: {{ dispersalLabel }}<span v-if="projectMeta.preparedBy"> · Elaborado por {{ projectMeta.preparedBy }}</span>
         </p>
       </header>
 

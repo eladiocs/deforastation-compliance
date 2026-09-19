@@ -192,7 +192,10 @@ def generate_report_pdf(analysis: db_models.Analysis, parcel_name: str) -> bytes
     ]
     if project_meta.description:
         story.append(Paragraph(project_meta.description, _styles["Body"]))
-    meta_line = f"Generado el {analysis.created_at.strftime('%d/%m/%Y %H:%M')}"
+    meta_line = (
+        f"Generado el {analysis.created_at.strftime('%d/%m/%Y %H:%M')} &middot; "
+        f"Distancia de dispersión: {analysis.dispersal_label}"
+    )
     if project_meta.prepared_by:
         meta_line += f" &middot; Elaborado por {project_meta.prepared_by}"
     story.append(Paragraph(meta_line, _styles["Meta"]))
