@@ -13,6 +13,15 @@ simplified proxy (height above the lowest point within the analysis buffer),
 not a true HAND (Height Above Nearest Drainage) computation, and the result
 does not replace official flood-zone layers (e.g. SNCZI in Spain) for
 regulatory use.
+
+The channel-proximity signal is additionally checked against MERIT Hydro's
+own `hnd` band (its native, precomputed Height Above Nearest Drainage) to
+discard false positives on terrain that is horizontally close to a channel
+but sits well above it — e.g. Teruel's old town, built on a promontory ~50 m
+above the Turia/Alfambra valley: `distance_to_channel_m` alone found a
+channel nearby (an artifact of how that distance is aggregated over a wide
+search radius, not of real proximity) and scored it "alto" despite the point
+being nowhere near reachable by that channel's floodwater.
 """
 
 import ee
@@ -46,6 +55,16 @@ MERIT_SCALE_M = 90
 CHANNEL_MIN_UPSTREAM_AREA_KM2 = 10.0
 
 POINT_SAMPLE_RADIUS_M = 15.0  # smooths out a single noisy DEM/GSW pixel at the point
+
+# MERIT Hydro's own "hnd" band (Height Above Nearest Drainage), natively
+# co-registered with "upa" — no cross-dataset reprojection needed, unlike an
+# earlier attempt at this that mixed the 30 m Copernicus DEM with MERIT's
+# ~90 m grid and produced unreliable None results. Empirically, real
+# flood-risk sites (Almoradí, Biescas, Sant Llorenç, DANA Valencia, Mocoa,
+# Galacho de Juslibol) all measured under 12 m; known-safe elevated sites
+# (Teruel's old town, a control point in Extremadura) measured over 40 m —
+# a wide, clean gap, so 20 m is a safe cutoff with margin on both sides.
+CHANNEL_SAFE_HAND_M = 20.0
 
 
 def _point_buffer(point: ee.Geometry, radius_m: float) -> ee.Geometry:
@@ -93,6 +112,7 @@ def _score_and_label(
     distance_to_water_m: float,
     distance_to_channel_m: float,
     slope_pct: float,
+    hand_m: float,
 ) -> tuple[float, str, list[dict]]:
     """Weighted rule-based score, 0-100. Documented thresholds instead of a
     trained model — mirrors the compliance-status logic in the
@@ -117,16 +137,26 @@ def _score_and_label(
         }
     )
 
-    if distance_to_channel_m < 100:
+    if hand_m >= CHANNEL_SAFE_HAND_M:
+        channel_score, channel_sev = 0.0, "bajo"
+        channel_label = (
+            "Distancia a un cauce de drenaje (incl. barrancos/ramblas secos) — "
+            f"descartado: el punto está {hand_m:.0f} m por encima del drenaje "
+            "más cercano (MERIT Hydro HAND)"
+        )
+    elif distance_to_channel_m < 100:
         channel_score, channel_sev = 30.0, "alto"
+        channel_label = "Distancia a un cauce de drenaje (incl. barrancos/ramblas secos)"
     elif distance_to_channel_m < 300:
         channel_score, channel_sev = 15.0, "medio"
+        channel_label = "Distancia a un cauce de drenaje (incl. barrancos/ramblas secos)"
     else:
         channel_score, channel_sev = 0.0, "bajo"
+        channel_label = "Distancia a un cauce de drenaje (incl. barrancos/ramblas secos)"
     factors.append(
         {
             "key": "distance_to_channel",
-            "label": "Distancia a un cauce de drenaje (incl. barrancos/ramblas secos)",
+            "label": channel_label,
             "value": round(distance_to_channel_m, 1),
             "unit": "m",
             "severity": channel_sev,
@@ -216,8 +246,17 @@ def analyze_point(lat: float, lng: float, buffer_radius_m: float) -> dict:
     distance_to_water_m = _distance_to_permanent_water_m(point)
     distance_to_channel_m = _distance_to_drainage_channel_m(point)
 
+    hand = ee.Image(MERIT_ASSET).select("hnd")
+    hand_m = _reduce_scalar(hand, sample_area, ee.Reducer.mean(), MERIT_SCALE_M)
+    hand_m = hand_m if hand_m is not None else 0.0
+
     risk_score, risk_label, risk_factors = _score_and_label(
-        water_occurrence_pct, relative_elevation_m, distance_to_water_m, distance_to_channel_m, slope_pct
+        water_occurrence_pct,
+        relative_elevation_m,
+        distance_to_water_m,
+        distance_to_channel_m,
+        slope_pct,
+        hand_m,
     )
 
     notes = [
@@ -233,7 +272,12 @@ def analyze_point(lat: float, lng: float, buffer_radius_m: float) -> dict:
         "por alto.",
         "La elevación relativa aproxima cuánto sobresale el punto sobre el "
         "terreno más bajo en su radio de análisis (proxy simplificado, no un "
-        "modelo hidráulico completo).",
+        "modelo hidráulico completo). El riesgo por cercanía a un cauce se "
+        "descarta cuando la banda 'hnd' (Height Above Nearest Drainage) de "
+        "MERIT Hydro indica que el punto está muy por encima del drenaje más "
+        f"cercano (>= {CHANNEL_SAFE_HAND_M:.0f} m), para no penalizar "
+        "ubicaciones claramente elevadas sobre un valle o cauce cercano en "
+        "horizontal pero inalcanzable por su inundación.",
         "Este resultado es una herramienta de apoyo y complementa (sin sustituir) "
         "las capas oficiales de zonas inundables (p. ej. SNCZI en España), "
         "detectando cauces y barrancos que estas, al basarse solo en cursos de "
