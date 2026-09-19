@@ -54,7 +54,7 @@ const severityClasses: Record<string, string> = {
         <tbody class="divide-y divide-gray-100">
           <tr v-for="f in analysis.risk_factors" :key="f.key">
             <td class="px-4 py-2 text-gray-900">{{ f.label }}</td>
-            <td class="px-4 py-2 text-gray-600">{{ f.value }} {{ f.unit }}</td>
+            <td class="px-4 py-2 whitespace-nowrap text-gray-600">{{ f.value }} {{ f.unit }}</td>
             <td class="px-4 py-2 font-medium capitalize" :class="severityClasses[f.severity]">
               {{ f.severity }}
             </td>

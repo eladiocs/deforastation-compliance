@@ -74,6 +74,10 @@ function updateBufferCircle() {
 }
 
 async function runAnalysis() {
+  if (bufferRadiusM.value < 50) {
+    error.value = 'El radio debe ser como mínimo 50 metros.'
+    return
+  }
   running.value = true
   error.value = null
   try {
