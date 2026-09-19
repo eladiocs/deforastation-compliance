@@ -238,7 +238,10 @@ watch(() => props.footprint, renderFootprint)
   <div class="space-y-2">
     <p v-if="uploadError" class="text-sm text-red-600">{{ uploadError }}</p>
 
-    <div class="relative isolate w-full overflow-hidden rounded-lg border border-gray-200" :class="heightClass">
+    <div
+      class="relative isolate w-full overflow-hidden rounded-lg border border-gray-200"
+      :class="[heightClass, { 'has-search': !readonly }]"
+    >
       <div ref="mapContainer" class="h-full w-full"></div>
 
       <form
@@ -288,7 +291,7 @@ watch(() => props.footprint, renderFootprint)
 </template>
 
 <style scoped>
-:deep(.leaflet-top.leaflet-right) {
-  margin-top: 56px;
+.has-search :deep(.leaflet-top.leaflet-right) {
+  margin-top: 48px;
 }
 </style>

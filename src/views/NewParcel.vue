@@ -250,6 +250,6 @@ function handleCancelDialog(): void {
 
 <style scoped>
 :deep(.leaflet-top.leaflet-right) {
-  margin-top: 56px;
+  margin-top: 48px;
 }
 </style>

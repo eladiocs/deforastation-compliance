@@ -182,9 +182,9 @@ function handleCancelDialog(): void {
     <div class="relative isolate h-[320px] overflow-hidden rounded-xl border border-gray-200 sm:h-[480px] lg:h-[640px]">
       <div id="point-map" class="h-full w-full"></div>
       <div class="absolute right-3 top-3 z-[1000] flex flex-col items-end gap-1.5">
-        <div class="flex gap-1.5">
+        <div class="flex gap-1">
           <form
-            class="flex w-36 items-center gap-1.5 rounded-lg border border-gray-200 bg-white/95 px-2.5 py-1.5 shadow-sm backdrop-blur-sm transition-shadow focus-within:shadow-md sm:w-44"
+            class="flex w-32 items-center gap-1 rounded-lg border border-gray-200 bg-white/95 px-2 py-1 shadow-sm backdrop-blur-sm transition-shadow focus-within:shadow-md sm:w-44 sm:gap-1.5 sm:px-2.5 sm:py-1.5"
             @submit.prevent="searchCity"
           >
             <span
@@ -201,7 +201,7 @@ function handleCancelDialog(): void {
           </form>
 
           <form
-            class="flex w-32 items-center gap-1.5 rounded-lg border border-gray-200 bg-white/95 px-2.5 py-1.5 shadow-sm backdrop-blur-sm transition-shadow focus-within:shadow-md sm:w-40"
+            class="flex w-28 items-center gap-1 rounded-lg border border-gray-200 bg-white/95 px-2 py-1 shadow-sm backdrop-blur-sm transition-shadow focus-within:shadow-md sm:w-40 sm:gap-1.5 sm:px-2.5 sm:py-1.5"
             @submit.prevent="goToCoordinates"
           >
             <MapPinIcon class="h-3.5 w-3.5 shrink-0 text-gray-400" />
@@ -234,6 +234,6 @@ function handleCancelDialog(): void {
 
 <style scoped>
 :deep(.leaflet-top.leaflet-right) {
-  margin-top: 56px;
+  margin-top: 48px;
 }
 </style>
