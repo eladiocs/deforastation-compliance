@@ -323,6 +323,12 @@ onUnmounted(() => {
     </template>
 
     <Modal :open="!!selectedAnalysis" max-width-class="max-w-4xl" @close="selectedAnalysis = null">
+      <template #header>
+        <h2 class="text-lg font-semibold text-gray-900">Informe de riesgo de inundación</h2>
+        <p v-if="selectedAnalysis" class="mt-1 text-sm text-gray-500">
+          {{ dayjs(selectedAnalysis.created_at).format('DD/MM/YYYY HH:mm') }}
+        </p>
+      </template>
       <InmueblesAnalysisReport v-if="selectedAnalysis" :analysis="selectedAnalysis" />
     </Modal>
 

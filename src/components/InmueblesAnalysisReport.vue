@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import dayjs from 'dayjs'
-
 import { api } from '@/api/inmueblesClient'
 import type { Analysis } from '@/api/inmueblesTypes'
 import RiskBadge from '@/components/RiskBadge.vue'
@@ -18,11 +16,7 @@ const severityClasses: Record<string, string> = {
 
 <template>
   <div>
-    <div class="mb-4 flex items-center justify-between">
-      <div>
-        <h1 class="text-xl font-semibold text-gray-900">Informe de riesgo de inundación</h1>
-        <p class="text-sm text-gray-500">{{ dayjs(analysis.created_at).format('DD/MM/YYYY HH:mm') }}</p>
-      </div>
+    <div class="mb-4 flex justify-end">
       <a
         :href="api.reportUrl(analysis.id)"
         target="_blank"

@@ -20,11 +20,7 @@ const ndviValues = () => props.analysis.ndvi_quarterly_series.map((p) => p.ndvi_
 
 <template>
   <div>
-    <div class="mb-4 flex items-center justify-between">
-      <div>
-        <h1 class="text-xl font-semibold text-gray-900">Informe de análisis</h1>
-        <p class="text-sm text-gray-500">{{ dayjs(analysis.created_at).format('DD/MM/YYYY HH:mm') }}</p>
-      </div>
+    <div class="mb-4 flex justify-end">
       <a
         :href="api.reportUrl(analysis.id)"
         target="_blank"
