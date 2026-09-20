@@ -13,31 +13,39 @@ interface SourceRow {
 
 const SOURCES: SourceRow[] = [
   {
-    dato: 'Elevación y pendiente del terreno',
+    dato: 'Altura sobre el drenaje más cercano (HAND)',
+    fuente: 'MERIT Hydro v1.0.1 (banda "hnd"), vía Google Earth Engine',
+    resolucion: '~90 m',
+    metodo:
+      'Es el factor que determina el riesgo por elevación: una medición hidrológica real (altura sobre la red de drenaje más cercana), evaluada en el propio punto, sin radio de análisis ni buffer. También descarta el riesgo por cercanía a un cauce o a agua permanente cuando el punto está a 20 m o más por encima del drenaje más cercano, para no penalizar ubicaciones elevadas sobre un valle o cauce cercano en horizontal pero inalcanzable por su inundación (p. ej. el casco antiguo de Teruel o el Alcázar de Toledo, ambos sobre promontorios).',
+  },
+  {
+    dato: 'Elevación y pendiente del terreno (datos de referencia)',
     fuente: 'Copernicus DEM GLO-30 (ESA/Comisión Europea), vía Google Earth Engine',
     resolucion: '30 m',
     metodo:
-      'La elevación relativa aproxima cuánto sobresale el punto sobre el terreno más bajo dentro del radio de análisis configurado — un proxy simplificado, no un modelo hidráulico completo.',
+      'Elevación y pendiente absolutas en el punto, mostradas como referencia. El riesgo por elevación lo determina HAND (fila anterior), no estos valores.',
   },
   {
     dato: 'Ocupación histórica de agua y distancia a agua permanente',
     fuente: 'JRC Global Surface Water v1.4 (Comisión Europea), vía Google Earth Engine',
     resolucion: '30 m · histórico 1984-2021',
     metodo:
-      'Un pixel se considera "agua permanente" si históricamente estuvo ocupado por agua al menos el 50% del tiempo. La distancia se calcula hasta el pixel de agua permanente más cercano dentro de un radio de búsqueda de 1 km.',
+      'Un pixel se considera "agua permanente" si históricamente estuvo ocupado por agua al menos el 50% del tiempo. La distancia se evalúa en el propio punto del inmueble (no como el mínimo dentro de un radio de búsqueda amplio, que puede reportar una distancia casi nula si un cuerpo de agua simplemente pasa dentro del radio). Se descarta cuando HAND indica que el punto está 20 m o más por encima del drenaje más cercano.',
   },
   {
     dato: 'Distancia a un cauce de drenaje',
     fuente: 'MERIT Hydro v1.0.1, vía Google Earth Engine',
     resolucion: '~90 m',
     metodo:
-      'Se considera "cauce" cualquier punto con al menos 10 km² de cuenca aguas arriba (área de drenaje), derivado del terreno — no de si el satélite lo vio mojado alguna vez. Esto detecta barrancos y ramblas mediterráneos que están secos la mayor parte del año y solo llevan agua en episodios de lluvia torrencial (el mecanismo de la DANA de Valencia de 2024), que el dato de ocupación histórica de agua no puede ver.',
+      'Se considera "cauce" cualquier punto con al menos 10 km² de cuenca aguas arriba (área de drenaje), derivado del terreno — no de si el satélite lo vio mojado alguna vez. Esto detecta barrancos y ramblas mediterráneos que están secos la mayor parte del año y solo llevan agua en episodios de lluvia torrencial (el mecanismo de la DANA de Valencia de 2024), que el dato de ocupación histórica de agua no puede ver. Igual que la distancia a agua permanente, se evalúa en el propio punto y se descarta cuando HAND indica 20 m o más de altura sobre el drenaje más cercano.',
   },
   {
     dato: 'Ubicación del inmueble',
     fuente: 'Marcado a mano en el mapa por el usuario, u obtenido por búsqueda de dirección/ciudad',
     resolucion: 'Según precisión del marcado',
-    metodo: 'No se contrasta contra ningún catastro oficial; el punto es el que aporta quien crea el inmueble.',
+    metodo:
+      'No se contrasta contra ningún catastro oficial; el punto es el que aporta quien crea el inmueble. El riesgo se evalúa siempre sobre ese punto exacto, no sobre un área o buffer alrededor de él.',
   },
 ]
 </script>

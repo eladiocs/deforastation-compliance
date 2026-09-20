@@ -194,6 +194,12 @@ onUnmounted(() => {
 
       <div class="rounded-xl border border-gray-200 bg-white p-4">
         <h2 class="mb-2 text-sm font-semibold text-gray-900">Ejecutar análisis de riesgo</h2>
+        <p class="text-sm text-gray-500">
+          Evalúa el riesgo de inundación del inmueble a partir de su elevación sobre el drenaje más
+          cercano, la cercanía a agua permanente y a cauces (incluyendo barrancos y ramblas secos) y
+          la pendiente del terreno, usando datasets globales (MERIT Hydro, JRC Global Surface Water y
+          Copernicus DEM).
+        </p>
         <button
           type="button"
           :disabled="running"
