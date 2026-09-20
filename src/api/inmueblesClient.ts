@@ -55,10 +55,6 @@ export interface UpdateParcelPayload {
   address?: string | null
 }
 
-export interface CreateAnalysisPayload {
-  buffer_radius_m?: number
-}
-
 export const api = {
   listParcels: () => getJSON<Parcel[]>('/parcels'),
   getParcel: (id: number | string) => getJSON<Parcel>(`/parcels/${id}`),
@@ -67,8 +63,7 @@ export const api = {
     sendJSON<Parcel>(`/parcels/${id}`, 'PATCH', payload),
   deleteParcel: (id: number | string) => deleteRequest(`/parcels/${id}`),
   listParcelAnalyses: (parcelId: number | string) => getJSON<Analysis[]>(`/parcels/${parcelId}/analyses`),
-  createAnalysis: (parcelId: number | string, payload: CreateAnalysisPayload) =>
-    sendJSON<Analysis>(`/parcels/${parcelId}/analyses`, 'POST', payload),
+  createAnalysis: (parcelId: number | string) => sendJSON<Analysis>(`/parcels/${parcelId}/analyses`, 'POST', {}),
   getAnalysis: (id: number | string) => getJSON<Analysis>(`/analyses/${id}`),
   deleteAnalysis: (id: number | string) => deleteRequest(`/analyses/${id}`),
   reportUrl: (analysisId: number | string) => `${apiUrl}/analyses/${analysisId}/report`,

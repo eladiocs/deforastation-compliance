@@ -154,10 +154,7 @@ def generate_report_pdf(analysis: models.Analysis, parcel_name: str, address: st
     ]
     if address:
         story.append(Paragraph(address, _styles["Body"]))
-    meta_line = (
-        f"Generado el {analysis.created_at.strftime('%d/%m/%Y %H:%M')} &middot; "
-        f"Radio de análisis: {analysis.buffer_radius_m:.0f} m"
-    )
+    meta_line = f"Generado el {analysis.created_at.strftime('%d/%m/%Y %H:%M')}"
     story.append(Paragraph(meta_line, _styles["Meta"]))
 
     story.append(Paragraph("Resultado", _styles["H2"]))

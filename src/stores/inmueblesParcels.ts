@@ -1,12 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import {
-  api,
-  type CreateAnalysisPayload,
-  type CreateParcelPayload,
-  type UpdateParcelPayload,
-} from '@/api/inmueblesClient'
+import { api, type CreateParcelPayload, type UpdateParcelPayload } from '@/api/inmueblesClient'
 import type { Analysis, Parcel } from '@/api/inmueblesTypes'
 
 export const useInmueblesParcelsStore = defineStore('inmueblesParcels', () => {
@@ -68,8 +63,8 @@ export const useInmueblesParcelsStore = defineStore('inmueblesParcels', () => {
     return analyses
   }
 
-  async function createAnalysis(parcelId: number, payload: CreateAnalysisPayload): Promise<Analysis> {
-    const analysis = await api.createAnalysis(parcelId, payload)
+  async function createAnalysis(parcelId: number): Promise<Analysis> {
+    const analysis = await api.createAnalysis(parcelId)
     analysesByParcel.value = {
       ...analysesByParcel.value,
       [parcelId]: [analysis, ...(analysesByParcel.value[parcelId] ?? [])],

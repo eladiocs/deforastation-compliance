@@ -25,9 +25,8 @@ export interface RiskFactor {
 export interface Analysis {
   id: number
   parcel_id: number
-  buffer_radius_m: number
   elevation_m: number
-  relative_elevation_m: number
+  hand_m: number
   slope_pct: number
   water_occurrence_pct: number
   distance_to_water_m: number

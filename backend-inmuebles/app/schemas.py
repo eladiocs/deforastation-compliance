@@ -41,15 +41,6 @@ class ParcelOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class AnalysisCreateRequest(BaseModel):
-    buffer_radius_m: float = Field(
-        default=300.0,
-        ge=50.0,
-        le=2000.0,
-        description="Radio de análisis alrededor del punto, en metros",
-    )
-
-
 class RiskFactor(BaseModel):
     key: str
     label: str
@@ -61,9 +52,8 @@ class RiskFactor(BaseModel):
 class AnalysisOut(BaseModel):
     id: int
     parcel_id: int
-    buffer_radius_m: float
     elevation_m: float
-    relative_elevation_m: float
+    hand_m: float
     slope_pct: float
     water_occurrence_pct: float
     distance_to_water_m: float

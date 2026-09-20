@@ -6,7 +6,7 @@ from app import models
 from app.database import get_db
 from app.flood_analysis import analyze_point
 from app.report_generator import generate_report_pdf
-from app.schemas import AnalysisCreateRequest, AnalysisOut
+from app.schemas import AnalysisOut
 
 router = APIRouter(tags=["analyses"])
 
@@ -26,22 +26,16 @@ def _get_analysis_or_404(analysis_id: int, db: Session) -> models.Analysis:
 
 
 @router.post("/parcels/{parcel_id}/analyses", response_model=AnalysisOut)
-def create_analysis(
-    parcel_id: int, request: AnalysisCreateRequest, db: Session = Depends(get_db)
-) -> models.Analysis:
+def create_analysis(parcel_id: int, db: Session = Depends(get_db)) -> models.Analysis:
     parcel = _get_parcel_or_404(parcel_id, db)
     point = to_shape(parcel.geom)
 
     try:
-        result = analyze_point(lat=point.y, lng=point.x, buffer_radius_m=request.buffer_radius_m)
+        result = analyze_point(lat=point.y, lng=point.x)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Earth Engine analysis failed: {exc}") from exc
 
-    analysis = models.Analysis(
-        parcel_id=parcel.id,
-        buffer_radius_m=request.buffer_radius_m,
-        **result,
-    )
+    analysis = models.Analysis(parcel_id=parcel.id, **result)
     db.add(analysis)
     db.commit()
     db.refresh(analysis)

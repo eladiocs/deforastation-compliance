@@ -8,20 +8,22 @@ module's use of Hansen Global Forest Change. The combined score is a
 documented rule-based function of both; see `_score_and_label` for the exact
 thresholds.
 
-This is a support tool, not a hydraulic model: `relative_elevation_m` is a
-simplified proxy (height above the lowest point within the analysis buffer),
-not a true HAND (Height Above Nearest Drainage) computation, and the result
-does not replace official flood-zone layers (e.g. SNCZI in Spain) for
-regulatory use.
+This is a support tool, not a hydraulic model, and the result does not
+replace official flood-zone layers (e.g. SNCZI in Spain) for regulatory use.
+Every input is evaluated at the point itself — the subject is always a single
+construction/dwelling, not an area, so there is no buffer/analysis-radius
+parameter anywhere in this module.
 
-The channel-proximity signal is additionally checked against MERIT Hydro's
-own `hnd` band (its native, precomputed Height Above Nearest Drainage) to
-discard false positives on terrain that is horizontally close to a channel
-but sits well above it — e.g. Teruel's old town, built on a promontory ~50 m
-above the Turia/Alfambra valley: `distance_to_channel_m` alone found a
-channel nearby (an artifact of how that distance is aggregated over a wide
-search radius, not of real proximity) and scored it "alto" despite the point
-being nowhere near reachable by that channel's floodwater.
+Elevation risk and the channel/permanent-water proximity signals are all
+checked against MERIT Hydro's own `hnd` band (its native, precomputed Height
+Above Nearest Drainage, "HAND") to discard false positives on terrain that is
+horizontally close to water but sits well above it — e.g. Teruel's old town,
+built on a promontory ~50 m above the Turia/Alfambra valley, or the Alcázar
+de Toledo on its promontory above the Tajo gorge: `distance_to_channel_m`/
+`distance_to_water_m` alone found water nearby (an artifact of how distance
+is aggregated over a wide search radius, not of real proximity) and scored
+"alto"/"medio" despite the point being nowhere near reachable by that
+water's flooding.
 """
 
 import ee
@@ -64,6 +66,13 @@ POINT_SAMPLE_RADIUS_M = 15.0  # smooths out a single noisy DEM/GSW pixel at the 
 # Galacho de Juslibol) all measured under 12 m; known-safe elevated sites
 # (Teruel's old town, a control point in Extremadura) measured over 40 m —
 # a wide, clean gap, so 20 m is a safe cutoff with margin on both sides.
+#
+# HAND — not a buffer-relative elevation proxy — is also the basis for the
+# elevation risk factor itself: it is a real, point-evaluated hydrological
+# measurement (height above the nearest drainage network) and needs no
+# analysis radius, unlike the old "height above the lowest point within an
+# arbitrary buffer" approximation it replaced.
+HAND_HIGH_RISK_M = 12.0
 CHANNEL_SAFE_HAND_M = 20.0
 
 
@@ -82,13 +91,22 @@ def _distance_to_permanent_water_m(point: ee.Geometry) -> float:
     as permanently occupied by water. fastDistanceTransform returns squared
     pixel-count distance; sqrt() converts to pixel count, and multiplying by
     the source resolution gives an approximate metric distance — adequate for
-    a risk-tier signal, not survey-grade."""
+    a risk-tier signal, not survey-grade.
+
+    Evaluated at the point itself (small sample radius), not reduced with
+    min() over the wide search buffer: min() over a 1000 m buffer picks up
+    any water body's own near-zero self-distance if it merely passes within
+    that buffer, which reports ~0 m even when the point itself is hundreds of
+    metres away (found on the Alcázar de Toledo, real distance 706 m,
+    buffer-min reported 0 m). fastDistanceTransform's neighborhood (256 px)
+    already searches far beyond the old buffer radius, so shrinking the
+    reduceRegion geometry doesn't reduce how far the transform can find water."""
+    sample_area = _point_buffer(point, POINT_SAMPLE_RADIUS_M)
     gsw_occurrence = ee.Image(GSW_ASSET).select("occurrence")
     permanent_water = gsw_occurrence.gte(PERMANENT_WATER_OCCURRENCE_PCT)
-    search_area = _point_buffer(point, WATER_SEARCH_RADIUS_M)
 
     distance_img = permanent_water.selfMask().fastDistanceTransform(256).sqrt().multiply(GSW_SCALE_M)
-    value = _reduce_scalar(distance_img, search_area, ee.Reducer.min(), GSW_SCALE_M)
+    value = _reduce_scalar(distance_img, sample_area, ee.Reducer.mean(), GSW_SCALE_M)
     return float(value) if value is not None else WATER_SEARCH_RADIUS_M
 
 
@@ -96,19 +114,21 @@ def _distance_to_drainage_channel_m(point: ee.Geometry) -> float:
     """Approximate distance (m) to the nearest terrain-defined drainage
     channel — flags dry ravines/barrancos that JRC's water-occurrence signal
     misses, since this comes from upstream drainage area (a terrain property),
-    not from whether the channel was ever seen wet by satellite."""
+    not from whether the channel was ever seen wet by satellite.
+
+    Evaluated at the point itself, not reduced with min() over the wide
+    search buffer — same reasoning as `_distance_to_permanent_water_m`."""
+    sample_area = _point_buffer(point, POINT_SAMPLE_RADIUS_M)
     upstream_area = ee.Image(MERIT_ASSET).select("upa")
     channel = upstream_area.gte(CHANNEL_MIN_UPSTREAM_AREA_KM2)
-    search_area = _point_buffer(point, WATER_SEARCH_RADIUS_M)
 
     distance_img = channel.selfMask().fastDistanceTransform(256).sqrt().multiply(MERIT_SCALE_M)
-    value = _reduce_scalar(distance_img, search_area, ee.Reducer.min(), MERIT_SCALE_M)
+    value = _reduce_scalar(distance_img, sample_area, ee.Reducer.mean(), MERIT_SCALE_M)
     return float(value) if value is not None else WATER_SEARCH_RADIUS_M
 
 
 def _score_and_label(
     water_occurrence_pct: float,
-    relative_elevation_m: float,
     distance_to_water_m: float,
     distance_to_channel_m: float,
     slope_pct: float,
@@ -163,32 +183,42 @@ def _score_and_label(
         }
     )
 
-    if relative_elevation_m < 1:
+    if hand_m < HAND_HIGH_RISK_M:
         elev_score, elev_sev = 25.0, "alto"
-    elif relative_elevation_m < 3:
+    elif hand_m < CHANNEL_SAFE_HAND_M:
         elev_score, elev_sev = 12.0, "medio"
     else:
         elev_score, elev_sev = 0.0, "bajo"
     factors.append(
         {
-            "key": "relative_elevation",
-            "label": "Elevación sobre el punto más bajo cercano",
-            "value": round(relative_elevation_m, 1),
+            "key": "hand",
+            "label": "Altura sobre el drenaje más cercano (HAND, MERIT Hydro)",
+            "value": round(hand_m, 1),
             "unit": "m",
             "severity": elev_sev,
         }
     )
 
-    if distance_to_water_m < 50:
+    if hand_m >= CHANNEL_SAFE_HAND_M:
+        dist_score, dist_sev = 0.0, "bajo"
+        dist_label = (
+            "Distancia a agua permanente conocida — descartado: el punto "
+            f"está {hand_m:.0f} m por encima del drenaje más cercano "
+            "(MERIT Hydro HAND)"
+        )
+    elif distance_to_water_m < 50:
         dist_score, dist_sev = 10.0, "alto"
+        dist_label = "Distancia a agua permanente conocida"
     elif distance_to_water_m < 200:
         dist_score, dist_sev = 5.0, "medio"
+        dist_label = "Distancia a agua permanente conocida"
     else:
         dist_score, dist_sev = 0.0, "bajo"
+        dist_label = "Distancia a agua permanente conocida"
     factors.append(
         {
             "key": "distance_to_water",
-            "label": "Distancia a agua permanente conocida",
+            "label": dist_label,
             "value": round(distance_to_water_m, 1),
             "unit": "m",
             "severity": dist_sev,
@@ -223,36 +253,33 @@ def _score_and_label(
     return score, label, factors
 
 
-def analyze_point(lat: float, lng: float, buffer_radius_m: float) -> dict:
+def analyze_point(lat: float, lng: float) -> dict:
     get_ee_client()
 
     point = ee.Geometry.Point([lng, lat])
     sample_area = _point_buffer(point, POINT_SAMPLE_RADIUS_M)
-    buffer_area = _point_buffer(point, buffer_radius_m)
 
     dem = ee.ImageCollection(DEM_ASSET).select(DEM_BAND).mosaic()
     slope = ee.Terrain.slope(dem)
     gsw_occurrence = ee.Image(GSW_ASSET).select("occurrence").unmask(0)
 
     elevation_m = _reduce_scalar(dem, sample_area, ee.Reducer.mean(), DEM_SCALE_M)
-    buffer_min_elevation_m = _reduce_scalar(dem, buffer_area, ee.Reducer.min(), DEM_SCALE_M)
     slope_pct = _reduce_scalar(slope, sample_area, ee.Reducer.mean(), DEM_SCALE_M) or 0.0
     water_occurrence_pct = _reduce_scalar(gsw_occurrence, sample_area, ee.Reducer.mean(), GSW_SCALE_M) or 0.0
 
-    if elevation_m is None or buffer_min_elevation_m is None:
+    if elevation_m is None:
         raise ValueError("No hay datos de elevación disponibles para este punto")
 
-    relative_elevation_m = max(0.0, elevation_m - buffer_min_elevation_m)
     distance_to_water_m = _distance_to_permanent_water_m(point)
     distance_to_channel_m = _distance_to_drainage_channel_m(point)
 
     hand = ee.Image(MERIT_ASSET).select("hnd")
     hand_m = _reduce_scalar(hand, sample_area, ee.Reducer.mean(), MERIT_SCALE_M)
-    hand_m = hand_m if hand_m is not None else 0.0
+    if hand_m is None:
+        raise ValueError("No hay datos HAND (MERIT Hydro) disponibles para este punto")
 
     risk_score, risk_label, risk_factors = _score_and_label(
         water_occurrence_pct,
-        relative_elevation_m,
         distance_to_water_m,
         distance_to_channel_m,
         slope_pct,
@@ -270,14 +297,15 @@ def analyze_point(lat: float, lng: float, buffer_radius_m: float) -> dict:
         "en el terreno, no en si históricamente se vio con agua — por eso "
         "detecta barrancos y ramblas secos que JRC Global Surface Water pasa "
         "por alto.",
-        "La elevación relativa aproxima cuánto sobresale el punto sobre el "
-        "terreno más bajo en su radio de análisis (proxy simplificado, no un "
-        "modelo hidráulico completo). El riesgo por cercanía a un cauce se "
-        "descarta cuando la banda 'hnd' (Height Above Nearest Drainage) de "
-        "MERIT Hydro indica que el punto está muy por encima del drenaje más "
-        f"cercano (>= {CHANNEL_SAFE_HAND_M:.0f} m), para no penalizar "
-        "ubicaciones claramente elevadas sobre un valle o cauce cercano en "
-        "horizontal pero inalcanzable por su inundación.",
+        "Altura sobre el drenaje más cercano (HAND): banda 'hnd' de MERIT "
+        "Hydro, medida directamente en el punto (no un promedio sobre un "
+        "área). Es el factor que determina el riesgo por elevación y también "
+        "descarta el riesgo por cercanía a un cauce o a agua permanente "
+        f"cuando el punto está >= {CHANNEL_SAFE_HAND_M:.0f} m por encima del "
+        "drenaje más cercano — para no penalizar ubicaciones claramente "
+        "elevadas sobre un valle o cauce cercano en horizontal pero "
+        "inalcanzable por su inundación (p. ej. un promontorio junto a un río "
+        "encajonado).",
         "Este resultado es una herramienta de apoyo y complementa (sin sustituir) "
         "las capas oficiales de zonas inundables (p. ej. SNCZI en España), "
         "detectando cauces y barrancos que estas, al basarse solo en cursos de "
@@ -288,7 +316,7 @@ def analyze_point(lat: float, lng: float, buffer_radius_m: float) -> dict:
 
     return {
         "elevation_m": round(elevation_m, 2),
-        "relative_elevation_m": round(relative_elevation_m, 2),
+        "hand_m": round(hand_m, 2),
         "slope_pct": round(slope_pct, 2),
         "water_occurrence_pct": round(water_occurrence_pct, 2),
         "distance_to_water_m": round(distance_to_water_m, 2),

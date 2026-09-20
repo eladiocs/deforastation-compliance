@@ -29,10 +29,7 @@ const loadError = ref<string | null>(null)
 const running = ref(false)
 const error = ref<string | null>(null)
 
-const bufferRadiusM = ref(300)
-
 let map: L.Map | undefined
-let bufferCircle: L.Circle | undefined
 
 async function load() {
   loading.value = true
@@ -58,35 +55,20 @@ function renderMap(p: Parcel) {
   map = L.map('parcel-map').setView([lat, lng], 15)
   addBaseLayers(map)
   L.marker([lat, lng]).addTo(map)
-  bufferCircle = L.circle([lat, lng], {
-    radius: bufferRadiusM.value,
-    color: '#5fb92c',
-    fillOpacity: 0.1,
-  }).addTo(map)
   map.on('moveend', () => {
     const center = map!.getCenter()
     parcelsStore.setLastViewedMapCenter({ lat: center.lat, lng: center.lng, zoom: map!.getZoom() })
   })
 }
 
-function updateBufferCircle() {
-  bufferCircle?.setRadius(bufferRadiusM.value)
-}
-
 async function runAnalysis() {
-  if (bufferRadiusM.value < 50) {
-    error.value = 'El radio debe ser como mínimo 50 metros.'
-    return
-  }
   running.value = true
   error.value = null
   try {
-    const analysis = await parcelsStore.createAnalysis(parcelId, {
-      buffer_radius_m: bufferRadiusM.value,
-    })
+    const analysis = await parcelsStore.createAnalysis(parcelId)
     analyses.value.unshift(analysis)
   } catch {
-    error.value = 'El análisis falló. Puede deberse a un error de Earth Engine o a un radio demasiado grande.'
+    error.value = 'El análisis falló. Puede deberse a un error de Earth Engine.'
   } finally {
     running.value = false
   }
@@ -212,18 +194,6 @@ onUnmounted(() => {
 
       <div class="rounded-xl border border-gray-200 bg-white p-4">
         <h2 class="mb-2 text-sm font-semibold text-gray-900">Ejecutar análisis de riesgo</h2>
-        <div>
-          <label class="block text-xs font-medium text-gray-700">Radio de análisis (m)</label>
-          <input
-            v-model.number="bufferRadiusM"
-            type="number"
-            min="50"
-            max="2000"
-            step="50"
-            class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm"
-            @change="updateBufferCircle"
-          />
-        </div>
         <button
           type="button"
           :disabled="running"
@@ -254,10 +224,6 @@ onUnmounted(() => {
               <dt class="text-gray-500">Score</dt>
               <dd class="text-gray-900">{{ a.risk_score.toFixed(0) }} / 100</dd>
             </div>
-            <div>
-              <dt class="text-gray-500">Radio</dt>
-              <dd class="text-gray-900">{{ a.buffer_radius_m.toFixed(0) }} m</dd>
-            </div>
           </dl>
           <div class="mt-3 flex items-center justify-end gap-2">
             <button
@@ -285,7 +251,6 @@ onUnmounted(() => {
             <tr>
               <th class="px-4 py-2 text-left font-medium text-gray-500">Fecha</th>
               <th class="px-4 py-2 text-left font-medium text-gray-500">Score</th>
-              <th class="px-4 py-2 text-left font-medium text-gray-500">Radio</th>
               <th class="px-4 py-2 text-left font-medium text-gray-500">Riesgo</th>
               <th class="px-4 py-2 text-left font-medium text-gray-500"></th>
               <th class="px-4 py-2 text-left font-medium text-gray-500"></th>
@@ -295,7 +260,6 @@ onUnmounted(() => {
             <tr v-for="a in analyses" :key="a.id" class="hover:bg-gray-50">
               <td class="px-4 py-2 text-gray-600">{{ dayjs(a.created_at).format('DD/MM/YYYY HH:mm') }}</td>
               <td class="px-4 py-2 text-gray-600">{{ a.risk_score.toFixed(0) }} / 100</td>
-              <td class="px-4 py-2 text-gray-600">{{ a.buffer_radius_m.toFixed(0) }} m</td>
               <td class="px-4 py-2"><RiskBadge :label="a.risk_label" /></td>
               <td class="px-4 py-2 text-right">
                 <button

@@ -25,10 +25,8 @@ class Analysis(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     parcel_id: Mapped[int] = mapped_column(ForeignKey("parcels.id", ondelete="CASCADE"), nullable=False)
 
-    buffer_radius_m: Mapped[float] = mapped_column(Float, nullable=False)
-
     elevation_m: Mapped[float] = mapped_column(Float, nullable=False)
-    relative_elevation_m: Mapped[float] = mapped_column(Float, nullable=False)
+    hand_m: Mapped[float] = mapped_column(Float, nullable=False)
     slope_pct: Mapped[float] = mapped_column(Float, nullable=False)
     water_occurrence_pct: Mapped[float] = mapped_column(Float, nullable=False)
     distance_to_water_m: Mapped[float] = mapped_column(Float, nullable=False)

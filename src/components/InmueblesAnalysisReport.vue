@@ -32,7 +32,6 @@ const severityClasses: Record<string, string> = {
         <span class="text-2xl font-semibold text-gray-900">{{ analysis.risk_score.toFixed(0) }} / 100</span>
         <RiskBadge :label="analysis.risk_label" />
       </div>
-      <p class="mt-1 text-xs text-gray-400">Radio de análisis: {{ analysis.buffer_radius_m.toFixed(0) }} m</p>
     </div>
 
     <h2 class="mb-2 text-sm font-semibold text-gray-900">Factores considerados</h2>
