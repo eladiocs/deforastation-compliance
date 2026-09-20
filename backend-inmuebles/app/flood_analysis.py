@@ -56,6 +56,24 @@ MERIT_SCALE_M = 90
 # can carry a dangerous flash flood" from ordinary hillside drainage.
 CHANNEL_MIN_UPSTREAM_AREA_KM2 = 10.0
 
+# The 100 m/300 m channel-proximity thresholds below are calibrated for a
+# Mediterranean barranco just over CHANNEL_MIN_UPSTREAM_AREA_KM2 — narrow,
+# fast-draining, where a few hundred metres is genuinely safe. A river/bayou
+# with a much larger watershed floods a much wider floodplain by overbank
+# spread rather than flash-channel proximity: Houston's Meyerland
+# neighbourhood, ~670 m from Brays Bayou (~148 km² of upstream area measured
+# nearby), has flooded repeatedly (2015, 2016, Hurricane Harvey 2017) despite
+# sitting well past the 300 m "medio" cutoff. So the thresholds scale with
+# sqrt(basin area) — a common hydraulic-geometry approximation (channel/
+# floodplain width grows roughly with the square root of drainage area) —
+# capped so an enormous river's floodplain doesn't extrapolate to absurd
+# distances, since at that scale engineered levees and other factors this
+# rule-based model has no data on start to dominate.
+CHANNEL_UPA_SEARCH_RADIUS_M = 2000.0
+CHANNEL_PROXIMITY_ALTO_BASE_M = 100.0
+CHANNEL_PROXIMITY_MEDIO_BASE_M = 300.0
+CHANNEL_PROXIMITY_MAX_SCALE = 5.0  # caps the envelope at 500 m / 1500 m
+
 POINT_SAMPLE_RADIUS_M = 15.0  # smooths out a single noisy DEM/GSW pixel at the point
 
 # MERIT Hydro's own "hnd" band (Height Above Nearest Drainage), natively
@@ -107,7 +125,14 @@ def _distance_to_permanent_water_m(point: ee.Geometry) -> float:
 
     distance_img = permanent_water.selfMask().fastDistanceTransform(256).sqrt().multiply(GSW_SCALE_M)
     value = _reduce_scalar(distance_img, sample_area, ee.Reducer.mean(), GSW_SCALE_M)
-    return float(value) if value is not None else WATER_SEARCH_RADIUS_M
+    if value is None:
+        return WATER_SEARCH_RADIUS_M
+    # When no water pixel exists anywhere within fastDistanceTransform's reach
+    # (e.g. Atacama, central Australia), Earth Engine doesn't mask the pixel —
+    # it fills with a 2^31 int32-overflow sentinel (sqrt(2^31) * 30 m ≈
+    # 1,390,228 m), the same constant everywhere regardless of location. Treat
+    # anything beyond the intended search radius as "no water found nearby".
+    return min(float(value), WATER_SEARCH_RADIUS_M)
 
 
 def _distance_to_drainage_channel_m(point: ee.Geometry) -> float:
@@ -124,7 +149,23 @@ def _distance_to_drainage_channel_m(point: ee.Geometry) -> float:
 
     distance_img = channel.selfMask().fastDistanceTransform(256).sqrt().multiply(MERIT_SCALE_M)
     value = _reduce_scalar(distance_img, sample_area, ee.Reducer.mean(), MERIT_SCALE_M)
-    return float(value) if value is not None else WATER_SEARCH_RADIUS_M
+    if value is None:
+        return WATER_SEARCH_RADIUS_M
+    # Same int32-overflow sentinel risk as _distance_to_permanent_water_m.
+    return min(float(value), WATER_SEARCH_RADIUS_M)
+
+
+def _nearest_channel_upstream_area_km2(point: ee.Geometry) -> float:
+    """Largest upstream drainage area (km²) among channel pixels within
+    CHANNEL_UPA_SEARCH_RADIUS_M — a proxy for how big the nearest channel is,
+    used to scale how far its floodplain can realistically extend. Uses max()
+    over a generous radius rather than the value at the single nearest pixel:
+    simpler to compute, and for scoring purposes what matters is "is there a
+    major river nearby", not the watershed size at the exact closest point."""
+    search_area = _point_buffer(point, CHANNEL_UPA_SEARCH_RADIUS_M)
+    upstream_area = ee.Image(MERIT_ASSET).select("upa")
+    value = _reduce_scalar(upstream_area, search_area, ee.Reducer.max(), MERIT_SCALE_M)
+    return float(value) if value is not None else 0.0
 
 
 def _score_and_label(
@@ -133,6 +174,7 @@ def _score_and_label(
     distance_to_channel_m: float,
     slope_pct: float,
     hand_m: float,
+    nearest_channel_upa_km2: float,
 ) -> tuple[float, str, list[dict]]:
     """Weighted rule-based score, 0-100. Documented thresholds instead of a
     trained model — mirrors the compliance-status logic in the
@@ -157,6 +199,21 @@ def _score_and_label(
         }
     )
 
+    channel_scale = min(
+        max(nearest_channel_upa_km2, CHANNEL_MIN_UPSTREAM_AREA_KM2) / CHANNEL_MIN_UPSTREAM_AREA_KM2,
+        CHANNEL_PROXIMITY_MAX_SCALE**2,
+    ) ** 0.5
+    channel_alto_threshold_m = CHANNEL_PROXIMITY_ALTO_BASE_M * channel_scale
+    channel_medio_threshold_m = CHANNEL_PROXIMITY_MEDIO_BASE_M * channel_scale
+    scale_note = (
+        f" (umbral ampliado a {channel_medio_threshold_m:.0f} m: el cauce más "
+        f"cercano tiene ~{nearest_channel_upa_km2:.0f} km² de cuenca aguas "
+        "arriba, mayor que un barranco típico, así que su llanura de "
+        "inundación se extiende más lejos)"
+        if channel_scale > 1.05
+        else ""
+    )
+
     if hand_m >= CHANNEL_SAFE_HAND_M:
         channel_score, channel_sev = 0.0, "bajo"
         channel_label = (
@@ -164,15 +221,15 @@ def _score_and_label(
             f"descartado: el punto está {hand_m:.0f} m por encima del drenaje "
             "más cercano (MERIT Hydro HAND)"
         )
-    elif distance_to_channel_m < 100:
+    elif distance_to_channel_m < channel_alto_threshold_m:
         channel_score, channel_sev = 30.0, "alto"
-        channel_label = "Distancia a un cauce de drenaje (incl. barrancos/ramblas secos)"
-    elif distance_to_channel_m < 300:
+        channel_label = "Distancia a un cauce de drenaje (incl. barrancos/ramblas secos)" + scale_note
+    elif distance_to_channel_m < channel_medio_threshold_m:
         channel_score, channel_sev = 15.0, "medio"
-        channel_label = "Distancia a un cauce de drenaje (incl. barrancos/ramblas secos)"
+        channel_label = "Distancia a un cauce de drenaje (incl. barrancos/ramblas secos)" + scale_note
     else:
         channel_score, channel_sev = 0.0, "bajo"
-        channel_label = "Distancia a un cauce de drenaje (incl. barrancos/ramblas secos)"
+        channel_label = "Distancia a un cauce de drenaje (incl. barrancos/ramblas secos)" + scale_note
     factors.append(
         {
             "key": "distance_to_channel",
@@ -183,16 +240,38 @@ def _score_and_label(
         }
     )
 
-    if hand_m < HAND_HIGH_RISK_M:
+    if distance_to_channel_m >= WATER_SEARCH_RADIUS_M:
+        # MERIT Hydro's "hnd" band is computed against MERIT's own internal
+        # drainage network, which uses a far smaller upstream-area threshold
+        # than our CHANNEL_MIN_UPSTREAM_AREA_KM2 — in near-flat terrain
+        # (e.g. the Nullarbor Plain) that makes hand_m read low almost
+        # everywhere, from micro-relief with no real channel, not from
+        # proximity to a drainage feature capable of flooding anything.
+        # Confirmed empirically: hand_m stayed 0-3.4 m across a 540 m grid
+        # and a 4 km transect there, while upa never exceeded ~1 km² (vs. the
+        # 10 km² channel threshold) — a flat-terrain artifact, not a signal.
+        elev_score, elev_sev = 0.0, "bajo"
+        elev_label = (
+            "Altura sobre el drenaje más cercano (HAND, MERIT Hydro) — "
+            "descartado: no se ha encontrado ningún cauce real (>= "
+            f"{CHANNEL_MIN_UPSTREAM_AREA_KM2:.0f} km² de cuenca aguas arriba) "
+            "dentro del radio de búsqueda; en terreno sin relieve, un HAND "
+            "bajo refleja la falta de desnivel del terreno, no cercanía a un "
+            "cauce real"
+        )
+    elif hand_m < HAND_HIGH_RISK_M:
         elev_score, elev_sev = 25.0, "alto"
+        elev_label = "Altura sobre el drenaje más cercano (HAND, MERIT Hydro)"
     elif hand_m < CHANNEL_SAFE_HAND_M:
         elev_score, elev_sev = 12.0, "medio"
+        elev_label = "Altura sobre el drenaje más cercano (HAND, MERIT Hydro)"
     else:
         elev_score, elev_sev = 0.0, "bajo"
+        elev_label = "Altura sobre el drenaje más cercano (HAND, MERIT Hydro)"
     factors.append(
         {
             "key": "hand",
-            "label": "Altura sobre el drenaje más cercano (HAND, MERIT Hydro)",
+            "label": elev_label,
             "value": round(hand_m, 1),
             "unit": "m",
             "severity": elev_sev,
@@ -272,6 +351,7 @@ def analyze_point(lat: float, lng: float) -> dict:
 
     distance_to_water_m = _distance_to_permanent_water_m(point)
     distance_to_channel_m = _distance_to_drainage_channel_m(point)
+    nearest_channel_upa_km2 = _nearest_channel_upstream_area_km2(point)
 
     hand = ee.Image(MERIT_ASSET).select("hnd")
     hand_m = _reduce_scalar(hand, sample_area, ee.Reducer.mean(), MERIT_SCALE_M)
@@ -284,6 +364,7 @@ def analyze_point(lat: float, lng: float) -> dict:
         distance_to_channel_m,
         slope_pct,
         hand_m,
+        nearest_channel_upa_km2,
     )
 
     notes = [
@@ -296,7 +377,11 @@ def analyze_point(lat: float, lng: float) -> dict:
         f"{CHANNEL_MIN_UPSTREAM_AREA_KM2} km² de cuenca aguas arriba. Se basa "
         "en el terreno, no en si históricamente se vio con agua — por eso "
         "detecta barrancos y ramblas secos que JRC Global Surface Water pasa "
-        "por alto.",
+        "por alto. El umbral de distancia considerado seguro escala con el "
+        "tamaño de la cuenca del cauce más cercano (hasta un máximo de 5x): "
+        "un río o bayou con una cuenca mucho mayor que la de un barranco "
+        "típico inunda por desbordamiento una llanura más ancha, no solo un "
+        "entorno estrecho del cauce.",
         "Altura sobre el drenaje más cercano (HAND): banda 'hnd' de MERIT "
         "Hydro, medida directamente en el punto (no un promedio sobre un "
         "área). Es el factor que determina el riesgo por elevación y también "

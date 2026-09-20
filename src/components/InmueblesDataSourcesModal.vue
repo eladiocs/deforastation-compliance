@@ -17,7 +17,7 @@ const SOURCES: SourceRow[] = [
     fuente: 'MERIT Hydro v1.0.1 (banda "hnd"), vía Google Earth Engine',
     resolucion: '~90 m',
     metodo:
-      'Es el factor que determina el riesgo por elevación: una medición hidrológica real (altura sobre la red de drenaje más cercana), evaluada en el propio punto, sin radio de análisis ni buffer. También descarta el riesgo por cercanía a un cauce o a agua permanente cuando el punto está a 20 m o más por encima del drenaje más cercano, para no penalizar ubicaciones elevadas sobre un valle o cauce cercano en horizontal pero inalcanzable por su inundación (p. ej. el casco antiguo de Teruel o el Alcázar de Toledo, ambos sobre promontorios).',
+      'Es el factor que determina el riesgo por elevación: una medición hidrológica real (altura sobre la red de drenaje más cercana), evaluada en el propio punto, sin radio de análisis ni buffer. Se descarta en dos casos: cuando el punto está a 20 m o más por encima del drenaje más cercano, para no penalizar ubicaciones elevadas sobre un valle o cauce cercano en horizontal pero inalcanzable por su inundación (p. ej. el casco antiguo de Teruel o el Alcázar de Toledo, ambos sobre promontorios); y cuando no se ha encontrado ningún cauce real (≥10 km² de cuenca) dentro del radio de búsqueda, ya que en terreno muy llano y sin relieve un HAND bajo puede reflejar simplemente la falta de desnivel, no cercanía real a una vía de drenaje (verificado en la llanura de Nullarbor, Australia: HAND bajo en una zona sin ningún cauce ni historial de inundación).',
   },
   {
     dato: 'Elevación y pendiente del terreno (datos de referencia)',
@@ -38,7 +38,7 @@ const SOURCES: SourceRow[] = [
     fuente: 'MERIT Hydro v1.0.1, vía Google Earth Engine',
     resolucion: '~90 m',
     metodo:
-      'Se considera "cauce" cualquier punto con al menos 10 km² de cuenca aguas arriba (área de drenaje), derivado del terreno — no de si el satélite lo vio mojado alguna vez. Esto detecta barrancos y ramblas mediterráneos que están secos la mayor parte del año y solo llevan agua en episodios de lluvia torrencial (el mecanismo de la DANA de Valencia de 2024), que el dato de ocupación histórica de agua no puede ver. Igual que la distancia a agua permanente, se evalúa en el propio punto y se descarta cuando HAND indica 20 m o más de altura sobre el drenaje más cercano.',
+      'Se considera "cauce" cualquier punto con al menos 10 km² de cuenca aguas arriba (área de drenaje), derivado del terreno — no de si el satélite lo vio mojado alguna vez. Esto detecta barrancos y ramblas mediterráneos que están secos la mayor parte del año y solo llevan agua en episodios de lluvia torrencial (el mecanismo de la DANA de Valencia de 2024), que el dato de ocupación histórica de agua no puede ver. Igual que la distancia a agua permanente, se evalúa en el propio punto y se descarta cuando HAND indica 20 m o más de altura sobre el drenaje más cercano. El umbral de distancia considerado seguro no es fijo: escala (hasta 5 veces) según el tamaño de la cuenca del cauce más cercano, porque un río o bayou con una cuenca mucho mayor que la de un barranco típico inunda por desbordamiento una llanura más ancha, no solo el entorno inmediato del cauce (verificado en Meyerland, Houston: a 673 m de Brays Bayou, ~148 km² de cuenca, un barrio con historial real de inundaciones repetidas que el umbral fijo anterior de 300 m no habría detectado).',
   },
   {
     dato: 'Ubicación del inmueble',
