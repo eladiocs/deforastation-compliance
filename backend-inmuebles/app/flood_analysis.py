@@ -368,7 +368,12 @@ def analyze_point(lat: float, lng: float) -> dict:
     )
 
     notes = [
-        "Elevación y pendiente: Copernicus DEM GLO-30 (resolución 30 m).",
+        "Elevación: Copernicus DEM GLO-30 (resolución 30 m), mostrada como "
+        "referencia; el riesgo por elevación lo determina HAND, no este valor.",
+        "Pendiente del terreno: derivada del mismo Copernicus DEM GLO-30 "
+        "(resolución 30 m); suma 5 puntos (severidad 'medio') cuando la "
+        "pendiente media en el punto es menor al 2%, por la peor capacidad de "
+        "drenaje de un terreno prácticamente llano.",
         "Ocupación histórica de agua y distancia a agua permanente: JRC Global "
         "Surface Water v1.4 (1984-2021, resolución 30 m); 'agua permanente' se "
         "define como ocupación histórica >= 50%.",

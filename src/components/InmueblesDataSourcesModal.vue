@@ -17,14 +17,21 @@ const SOURCES: SourceRow[] = [
     fuente: 'MERIT Hydro v1.0.1 (banda "hnd"), vía Google Earth Engine',
     resolucion: '~90 m',
     metodo:
-      'Es el factor que determina el riesgo por elevación: una medición hidrológica real (altura sobre la red de drenaje más cercana), evaluada en el propio punto, sin radio de análisis ni buffer. Se descarta en dos casos: cuando el punto está a 20 m o más por encima del drenaje más cercano, para no penalizar ubicaciones elevadas sobre un valle o cauce cercano en horizontal pero inalcanzable por su inundación (p. ej. el casco antiguo de Teruel o el Alcázar de Toledo, ambos sobre promontorios); y cuando no se ha encontrado ningún cauce real (≥10 km² de cuenca) dentro del radio de búsqueda, ya que en terreno muy llano y sin relieve un HAND bajo puede reflejar simplemente la falta de desnivel, no cercanía real a una vía de drenaje (verificado en la llanura de Nullarbor, Australia: HAND bajo en una zona sin ningún cauce ni historial de inundación).',
+      'Determina el riesgo por elevación: altura real sobre el drenaje más cercano, evaluada en el propio punto, sin radio de análisis. Se descarta si el punto está ≥20 m por encima del drenaje más cercano (evita penalizar promontorios como Teruel o el Alcázar de Toledo) o si no hay ningún cauce real (≥10 km² de cuenca) dentro del radio de búsqueda (terreno llano sin relieve, ej. Nullarbor).',
   },
   {
-    dato: 'Elevación y pendiente del terreno (datos de referencia)',
+    dato: 'Elevación del terreno (dato de referencia)',
     fuente: 'Copernicus DEM GLO-30 (ESA/Comisión Europea), vía Google Earth Engine',
     resolucion: '30 m',
     metodo:
-      'Elevación y pendiente absolutas en el punto, mostradas como referencia. El riesgo por elevación lo determina HAND (fila anterior), no estos valores.',
+      'Elevación absoluta en el punto, mostrada como referencia. El riesgo por elevación lo determina HAND (fila anterior), no este valor.',
+  },
+  {
+    dato: 'Pendiente del terreno (capacidad de drenaje)',
+    fuente: 'Copernicus DEM GLO-30 (ESA/Comisión Europea), vía Google Earth Engine',
+    resolucion: '30 m',
+    metodo:
+      'Suma 5 puntos (severidad "medio") cuando la pendiente media en el punto es menor al 2%: un terreno prácticamente llano drena peor el agua acumulada, con independencia de su proximidad a un cauce o a agua permanente.',
   },
   {
     dato: 'Ocupación histórica de agua y distancia a agua permanente',
@@ -38,7 +45,7 @@ const SOURCES: SourceRow[] = [
     fuente: 'MERIT Hydro v1.0.1, vía Google Earth Engine',
     resolucion: '~90 m',
     metodo:
-      'Se considera "cauce" cualquier punto con al menos 10 km² de cuenca aguas arriba (área de drenaje), derivado del terreno — no de si el satélite lo vio mojado alguna vez. Esto detecta barrancos y ramblas mediterráneos que están secos la mayor parte del año y solo llevan agua en episodios de lluvia torrencial (el mecanismo de la DANA de Valencia de 2024), que el dato de ocupación histórica de agua no puede ver. Igual que la distancia a agua permanente, se evalúa en el propio punto y se descarta cuando HAND indica 20 m o más de altura sobre el drenaje más cercano. El umbral de distancia considerado seguro no es fijo: escala (hasta 5 veces) según el tamaño de la cuenca del cauce más cercano, porque un río o bayou con una cuenca mucho mayor que la de un barranco típico inunda por desbordamiento una llanura más ancha, no solo el entorno inmediato del cauce (verificado en Meyerland, Houston: a 673 m de Brays Bayou, ~148 km² de cuenca, un barrio con historial real de inundaciones repetidas que el umbral fijo anterior de 300 m no habría detectado).',
+      'Se considera "cauce" cualquier punto con ≥10 km² de cuenca aguas arriba, derivado del terreno — no de si el satélite lo vio mojado. Así detecta barrancos y ramblas mediterráneos secos casi todo el año que la ocupación histórica de agua no ve (el mecanismo de la DANA de Valencia 2024). Se evalúa en el propio punto y se descarta cuando HAND indica ≥20 m sobre el drenaje más cercano. El umbral seguro escala (hasta 5x) según el tamaño de la cuenca, porque un río o bayou grande inunda una llanura más ancha que un barranco típico (verificado en Meyerland, Houston: 673 m de Brays Bayou, ~148 km² de cuenca, con inundaciones repetidas que un umbral fijo de 300 m no habría detectado).',
   },
   {
     dato: 'Ubicación del inmueble',
